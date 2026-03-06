@@ -1,4 +1,8 @@
-interface Datasets {
+export interface Datastore {
+  datasets: Dataset[]
+}
+
+export interface Dataset {
   Datasource: String,
   DataSetType: DataSetType,
   DataSetID: String,
@@ -7,40 +11,40 @@ interface Datasets {
   Events: Event[]
 }
 
-interface Event {
+export interface Event {
   eventID: String,
   eventType: EventType,
   TimeObject: TimeObject,
   Attributes: Attributes
 }
 
-interface Attributes {
+export interface Attributes {
   price: number,
   suburb: Suburb,
   state: State,
   bedrooms?: number,
 }
 
-enum EventType {
+export enum EventType {
   AVG_HOUSE_PRICE
 }
 
-interface TimeObject {
+export interface TimeObject {
   timestamp: Date,
   duration?: number, // datasets don't have a duration but events do??
   timezone: Location
 }
 
-interface Location {
+export interface Location {
   city: String,
   state: State
 }
 
-enum Suburb {
+export enum Suburb {
   CASTLE_HILL
 }
 
-enum State {
+export enum State {
   NSW,
   VIC,
   QLD,
@@ -49,6 +53,6 @@ enum State {
   NT
 }
 
-enum DataSetType {
+export enum DataSetType {
   PROPERTY_SALES
 }
