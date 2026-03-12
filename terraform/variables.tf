@@ -19,7 +19,7 @@ variable "stage" {
 variable "table_name" {
   description = "DynamoDB table name"
   type        = string
-  default     = "HousingEvents"
+  default     = "cloudbelly-dev-housing-events"
 }
 
 variable "bucket_name" {
