@@ -2,21 +2,19 @@ import os
 import json
 import uuid
 import boto3
-from dotenv import load_dotenv
 from decimal import Decimal
 from datetime import datetime, timezone
 from botocore.exceptions import ClientError
 
-load_dotenv()
-AWS_REGION = os.environ["AWS_REGION"]
-S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
-DDB_TABLE_NAME = os.environ["DDB_TABLE_NAME"]
+AWS_REGION = "us-east-1"
+S3_BUCKET_NAME = "cloudbelly-dev-raw-events"
+DDB_TABLE_NAME = "cloudbelly-dev-housing-events"
 
 s3 = boto3.client("s3", region_name=AWS_REGION)
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(DDB_TABLE_NAME)
 
-def main():
+def lambda_handler(event, context):
     now = datetime.now(timezone.utc).isoformat()
     test_id = str(uuid.uuid4())
 
@@ -46,9 +44,7 @@ def main():
         )
         print(f"[OK] Uploaded test object to S3: s3://{S3_BUCKET_NAME}/{s3_key}")
     except ClientError as e:
-        print("[FAIL] S3 put_object failed")
-        print(e)
-        return
+        raise ClientError(f"[FAIL] S3 put_object failed - {e}")
 
     # Read it back from S3
 
@@ -58,9 +54,7 @@ def main():
         print("[OK] Read object back from S3")
         print("S3 contents:", s3_body)
     except ClientError as e:
-        print("[FAIL] S3 get_object failed")
-        print(e)
-        return
+        raise ClientError(f"[FAIL] S3 get_object failed - {e}")
 
     # Write structured item to DynamoDB
 
@@ -81,9 +75,7 @@ def main():
         table.put_item(Item=item)
         print("[OK] Wrote test item to DynamoDB")
     except ClientError as e:
-        print("[FAIL] DynamoDB put_item failed")
-        print(e)
-        return
+        raise ClientError(f"[FAIL] DynamoDB put_item failed - {e}")
 
     # Read it back from DynamoDB
 
@@ -97,11 +89,8 @@ def main():
         print("[OK] Read item back from DynamoDB")
         print("DynamoDB item:", json.dumps(response.get("Item", {}), default=str, indent=2))
     except ClientError as e:
-        print("[FAIL] DynamoDB get_item failed")
-        print(e)
-        return
-
-    print("\nAll good — S3 + DynamoDB backend connectivity works.")
-
-if __name__ == "__main__":
-    main()
+        raise ClientError(f"[FAIL] DynamoDB get_item failed - {e}")
+    return {
+        'statusCode': 200,
+        'body': json.dumps('[OK] All tests passed!')
+    }
