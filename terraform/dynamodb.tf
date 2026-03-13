@@ -2,16 +2,16 @@ resource "aws_dynamodb_table" "housing_events" {
   name = var.table_name
   billing_mode = "PAY_PER_REQUEST"
 
-  hash_key = "suburb"
-  range_key = "period"
+  hash_key = "location"
+  range_key = "date"
 
   attribute {
-    name = "suburb"
+    name = "location"
     type = "S"
   }
 
   attribute {
-    name = "period"
+    name = "date"
     type = "S"
   }
 
