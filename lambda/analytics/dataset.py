@@ -7,10 +7,7 @@ table = dynamodb.Table('cloudbelly-dev-housing-events')
 def lambda_handler(event, context):
   datasetId = event["datasetId"]
 
-  response = dynamodb.get_item(
-    TableName='your-table-name',
-    Key={'datasetId': {'S': datasetId}}
-  )
+  response = table.get_item(Key={'datasetId': datasetId})
   item = response.get('Item', {})
 
   return {
