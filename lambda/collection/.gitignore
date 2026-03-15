@@ -1,0 +1,8 @@
+scraped_data
+testFiles
+.venv
+collection/__pycache__
+collection/spiders/__pycache__
+collection/www_onthehouse_com_au/pycache
+collection/www_oldlistings_com_au/pycache
+scraped
