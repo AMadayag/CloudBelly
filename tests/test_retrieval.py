@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath("lambda/collection"))
+sys.path.append(os.path.abspath("lambda/retrieval"))
 
 from handler import lambda_handler
 
