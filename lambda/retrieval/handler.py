@@ -18,7 +18,7 @@ def get_dataset_by_id(event):
   try:
     datasetId = event["pathParameters"]["datasetId"]
     response = table.scan(
-        FilterExpression=Attr('eventId').eq(datasetId)
+        FilterExpression=Attr('data').eq(datasetId)
     )
     items = response.get('Items', [])
     item = items[0] if items else {}
