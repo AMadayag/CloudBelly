@@ -1,5 +1,6 @@
 import json
-#just placeholder code so terraform can actually deploy
+import boto3
+from botocore.exceptions import ClientError
 
 def lambda_handler(event, context):
     route = event.get("routeKey", "")
