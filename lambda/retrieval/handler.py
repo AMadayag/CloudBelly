@@ -13,7 +13,7 @@ def lambda_handler(event, context):
   else:
     return {'statusCode': 404, 'body': json.dumps('Not found')}
 
-
+# GET /api/v1/datasets/{datasetId}
 def get_dataset_by_id(event):
   try:
     datasetId = event["pathParameters"]["datasetId"]
