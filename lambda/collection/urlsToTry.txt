@@ -1,0 +1,6 @@
+https://www.inthesuburbs.com.au/suburb/north-sydney-nsw-2060.html - html
+https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release - excel	
+https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/residential-property-price-indexes-eight-capital-cities/dec-2021 -excel
+https://tradingeconomics.com/australia/indicators - html - Have to pay for historical data
+https://www.abs.gov.au/statistics - A lot of useful data
+

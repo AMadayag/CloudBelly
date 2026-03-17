@@ -3,67 +3,41 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-import json
 from datetime import datetime
 import os
+import json
+import boto3
 
-class SuburbJsonPipeline:
-    def __init__(self):
-        self.events = []
+class DatasetPipeline:
+    def __init__(self, crawlerName, crawlerDomain):
         self.timestamp = datetime.now().isoformat()
-
-    def process_item(self, item):
-        self.events.append(item)
-        return item
-
-    def open_spider(self):
-        path = f"scraped/www_onthehouse_com_au/suburb-research_{self.timestamp}.json"
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        self.file = open(path, "w")
-
-    def close_spider(self):
-        data = {
-            "datasets": [{
-                "data_source": "https://www.onthehouse.com.au/suburb-research",
-                "data_set_type": "Suburb Summary",
-                "timestamp": self.timestamp,
-                "events": self.events
-            }]
-        }
-
-        json.dump(data, self.file, indent=4)
-
-class HousingJsonPipeline:
-    def __init__(self, domain):
         self.events = []
-        self.timestamp = datetime.now().isoformat()
-        self.domain = domain
+        self.crawlerName = crawlerName
+        self.crawlerDomain = crawlerDomain
 
     @classmethod
     def from_crawler(cls, crawler):
-        domain = getattr(crawler.spidercls, 'domain', crawler.spidercls.name)
-        return cls(domain)
+        crawlerName = getattr(crawler.spidercls, 'name', crawler.spidercls.name)
+        crawlerDomain = getattr(crawler.spidercls, 'domain', crawler.spidercls.name)
+        return cls(crawlerName, crawlerDomain)
 
     def process_item(self, item):
         self.events.append(item)
         return item
 
-    def open_spider(self):
-        path = f"scraped/{self.domain}/house-listings_{self.timestamp}.json"
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        self.file = open(path, "w")
-
     def close_spider(self):
         data = {
             "datasets": [{
-                "data_source": f"https://{self.domain}",
-                "data_set_type": "House Listings",
+                "data_source": self.crawlerDomain,
+                "data_set_type": self.crawlerName,
                 "timestamp": self.timestamp,
                 "events": self.events
             }]
         }
 
-        json.dump(data, self.file)
+        path = f"scraped/{self.crawlerDomain}/{self.crawlerName}_{self.timestamp}.json"
+        # os.makedirs(os.path.dirname(path), exist_ok=True)
+        # self.file = open(path, "w")
+        # json.dump(data, self.file, indent=2)
