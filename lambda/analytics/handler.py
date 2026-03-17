@@ -71,7 +71,7 @@ def get_price_trend(event):
     response = get_items(location, startDate, endDate)
     items = response.get('Items', [])
 
-    labels = [item['date'] for item in items]
+    labels = [item['eventKey'] for item in items]
     prices = [item['price'] for item in items]
     # may need to change from suburb to city if unable to access data
     suburb = items[0]['suburb'] if items else location
@@ -96,22 +96,22 @@ def get_price_trend(event):
 # gets items with optional start and end date params
 def get_items(location, startDate, endDate):
     try:
-    if startDate and endDate:
-        response = table.query(
-            KeyConditionExpression=Key('location').eq(location) & Key('date').between(startDate, endDate)
-        )
-    elif startDate:
-        response = table.query(
-            KeyConditionExpression=Key('location').eq(location) & Key('date').gte(startDate)
-        )
-    elif endDate:
-        response = table.query(
-            KeyConditionExpression=Key('location').eq(location) & Key('date').lte(endDate)
-        )
-    else:
-        response = table.query(
-            KeyConditionExpression=Key('location').eq(location)
-        )
+        if startDate and endDate:
+            response = table.query(
+                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').between(startDate, f"{endDate}#zzz")
+            )
+        elif startDate:
+            response = table.query(
+                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').gte(startDate)
+            )
+        elif endDate:
+            response = table.query(
+                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').lte(f"{endDate}#zzz")
+            )
+        else:
+            response = table.query(
+                KeyConditionExpression=Key('location').eq(location)
+            )
     except ClientError as e:
         raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
     
