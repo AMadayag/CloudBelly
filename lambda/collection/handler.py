@@ -1,27 +1,30 @@
 import json
 import os
-from scrapy.crawler import AsyncCrawlerProcess
-from scrapy.utils.project import get_project_settings
-from collection.spiders.www_abs_gov_au.total_value_of_dwellings import TotalValueOfDwellings
+from collection.pipelines import DatasetPipeline
+from collection.spiders.www_abs_gov_au.total_value_of_dwellings import TotalValueOfDwellingsScraper
 
 def lambda_handler(event, context):
     bucket = os.environ.get("BUCKET_NAME")
-
-    settings = get_project_settings()
-    settings.set("FEEDS", {f"s3://{bucket}/scraped/%(name)s_%(time)s.json": {"format": "json", "indent": 2}})
+    # settings.set("FEEDS", {f"s3://{bucket}/scraped/%(name)s_%(time)s.json": {"format": "json", "indent": 2}})
     # settings.set("FEEDS", {f"test.json": {"format": "json", "indent": 2}})
 
-    process = AsyncCrawlerProcess(settings)
-
     spiders = [
-        TotalValueOfDwellings
+        TotalValueOfDwellingsScraper()
     ]
 
+    pipelines = []
     for spider in spiders:
-        process.crawl(spider)
+        pipeline = DatasetPipeline(spider.getName(), spider.getDomain(), bucket)
+        spider.setPipeline(pipeline)
+        pipelines.append(pipeline)
 
     try:
-        process.start()
+        for x in spiders:
+            x.start()
+
+        for pipeline in pipelines:
+            pipeline.finish()
+
     except Exception as e:
         return {
             'statusCode': 500,
@@ -36,4 +39,4 @@ def lambda_handler(event, context):
         }
 
 if __name__ == "__main__":
-    lambda_handler({},None)
+    lambda_handler({}, None)

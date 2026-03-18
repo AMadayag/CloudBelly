@@ -1,26 +1,35 @@
-import scrapy
-from scrapy.selector import Selector
+import requests
 import pandas as pd
+from lxml import html
 import io
 import re
+from collection.pipelines import DatasetPipeline
+from collection.spiders.spider import Spider
 
-class TotalValueOfDwellings(scrapy.Spider):
-    name = "total_value_of_dwellings"
-    domain = "www.abs.gov.au"
-    custom_settings = {
-        "ITEM_PIPELINES": {"collection.pipelines.DatasetPipeline": 300},
-        "LOG_LEVEL": "INFO"
-    }
-    start_urls = ["https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release"]
+class TotalValueOfDwellingsScraper(Spider):
+    def __init__(self):
+        super().__init__("total_value_of_dwellings", "www.abs.gov.au")
+
+    def start(self):
+        self.log("started")
+        url = "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release"
+        self.parse(requests.get(url))
+        self.log("Finished")
 
     def parse(self, response):
+        self.log("parsing")
+        htmlContent = html.fromstring(response.content)
         identifier = "Median price and number of transfers (capital city and rest of state)"
-        dataXlsxDownload = response.xpath(f'//div[div/div/h3[contains(text(),"{identifier}")]]//a/@href').get()
+        dataXlsxFile = htmlContent.xpath(f'//div[div/div/h3[contains(text(),"{identifier}")]]//a/@href')[0]
 
-        yield scrapy.Request(url=response.urljoin(dataXlsxDownload), callback=self.parseDataSheet)
-
+        dataXlsxLink = f"https://{self.getDomain()}{dataXlsxFile}"
+        self.log(dataXlsxLink)
+        
+        self.parseDataSheet(requests.get(dataXlsxLink))
+    
     def parseDataSheet(self, response):
-        data = pd.read_excel(io.BytesIO(response.body), "Data1", 
+        self.log("parsing data sheet")
+        data = pd.read_excel(io.BytesIO(response.content), "Data1", 
             header=None,
             parse_dates=[0],
             date_format="%d-$m-$Y"
@@ -52,19 +61,19 @@ class TotalValueOfDwellings(scrapy.Spider):
             area = col[0].split(';')[-2].strip()
             numDwellTransfers[area] = col[10:]
         
-        areaData = {}
         for area in numHouseTransfers.keys():
-            areaData[area] = list(map(lambda x: {
-                "date": x[0],
-                "median_price_of_established_house_transfers": x[1],
-                "number_of_established_house_transfers": x[2],
-                "median_price_of_attached_dwelling_transfers": x[3],
-                "number_of_attached_dwelling_transfers": x[4],
-                }, list(zip(dates, 
-                medianPriceHouseTransfers[area], 
-                numHouseTransfers[area],
-                medianPriceDwellTransfers[area], 
-                numDwellTransfers[area]
-            ))))
+            for x in zip(
+            dates, 
+            medianPriceHouseTransfers[area],
+            numHouseTransfers[area], 
+            medianPriceDwellTransfers[area], 
+            numDwellTransfers[area]):
+                self.pipeline.processItem({
+                    "date": x[0],
+                    "area": area,
+                    "median_price_of_established_house_transfers": x[1],
+                    "number_of_established_house_transfers": x[2],
+                    "median_price_of_attached_dwelling_transfers": x[3],
+                    "number_of_attached_dwelling_transfers": x[4],
+                })
 
-        yield areaData

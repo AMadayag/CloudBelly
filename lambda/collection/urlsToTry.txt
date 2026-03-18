@@ -3,4 +3,5 @@ https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-valu
 https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/residential-property-price-indexes-eight-capital-cities/dec-2021 -excel
 https://tradingeconomics.com/australia/indicators - html - Have to pay for historical data
 https://www.abs.gov.au/statistics - A lot of useful data
+https://www.ljhooker.com.au/residential-search-results?orderBy=date-desc&searchOrigin=residential-au&searchProfile=buy - Try to scrape listings directly from agents
 

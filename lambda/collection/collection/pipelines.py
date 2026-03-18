@@ -4,40 +4,35 @@
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
 from datetime import datetime
 import os
 import json
 import boto3
 
 class DatasetPipeline:
-    def __init__(self, crawlerName, crawlerDomain):
+    def __init__(self, name, domain, bucket):
         self.timestamp = datetime.now().isoformat()
         self.events = []
-        self.crawlerName = crawlerName
-        self.crawlerDomain = crawlerDomain
+        self.crawlerName = name
+        self.crawlerDomain = domain
+        self.bucket = bucket
 
-    @classmethod
-    def from_crawler(cls, crawler):
-        crawlerName = getattr(crawler.spidercls, 'name', crawler.spidercls.name)
-        crawlerDomain = getattr(crawler.spidercls, 'domain', crawler.spidercls.name)
-        return cls(crawlerName, crawlerDomain)
-
-    def process_item(self, item):
+    def processItem(self, item):
         self.events.append(item)
-        return item
 
-    def close_spider(self):
+    def finish(self):
         data = {
-            "datasets": [{
+            "dataset": {
                 "data_source": self.crawlerDomain,
                 "data_set_type": self.crawlerName,
                 "timestamp": self.timestamp,
                 "events": self.events
-            }]
+            }
         }
 
         path = f"scraped/{self.crawlerDomain}/{self.crawlerName}_{self.timestamp}.json"
-        # os.makedirs(os.path.dirname(path), exist_ok=True)
-        # self.file = open(path, "w")
-        # json.dump(data, self.file, indent=2)
+        client = boto3.client('s3')
+        response = client.put_object(Bucket=self.bucket, Key=path, 
+            Body=json.dumps(data).encode("utf-8"))
+        # file = open(path, "w")
+        # json.dump(data, file, indent=2)
