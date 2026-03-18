@@ -1,5 +1,6 @@
 import json
 import boto3
+import os
 import statistics
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
@@ -9,7 +10,7 @@ table = dynamodb.Table(os.environ['TABLE_NAME'])
 
 def lambda_handler(event, context):
     route = event.get("routeKey", "")
-    
+
     if route == "GET /api/v1/analytics/price-trend":
         return get_price_trend(event)
     elif route == "GET /api/v1/analytics/summary":
