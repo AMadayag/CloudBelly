@@ -70,7 +70,8 @@ def get_summary(event):
 # GET /api/v1/analytics/price-trend
 def get_price_trend(event):
     params = event.get("queryStringParameters") or {}
-    location = params.get("suburb")
+    state = params.get("state", "NSW")
+    location = f"{state}#{params.get('suburb')}"
     startDate = params.get("from")
     endDate = params.get("to")
 
@@ -78,7 +79,7 @@ def get_price_trend(event):
         response = get_items(location, startDate, endDate)
         items = response.get('Items', [])
 
-        labels = [item['eventKey'] for item in items]
+        labels = [item['date'] for item in items]
         prices = [item['price'] for item in items]
         # may need to change from suburb to city if unable to access data
         suburb = items[0]['suburb'] if items else location
