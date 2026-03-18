@@ -9,13 +9,13 @@ table = dynamodb.Table(os.environ['TABLE_NAME'])
 
 def lambda_handler(event, context):
     route = event.get("routeKey", "")
-  
+    
     if route == "GET /api/v1/analytics/price-trend":
         return get_price_trend(event)
     elif route == "GET /api/v1/analytics/summary":
         return get_summary(event)
     else:
-    return {'statusCode': 404, 'body': json.dumps('Not found')}
+        return {'statusCode': 404, 'body': json.dumps('Not found')}
 
 # GET /api/v1/analytics/summary
 def get_summary(event):
