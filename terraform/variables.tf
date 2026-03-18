@@ -25,5 +25,5 @@ variable "table_name" {
 variable "bucket_name" {
   description = "S3 bucket name for raw housing data"
   type        = string
-  default     = "cloudbelly-dev-raw-events"
+  default     = "cloudbelly-team-dev-raw-events"
 }
