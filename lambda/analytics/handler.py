@@ -18,7 +18,7 @@ def lambda_handler(event, context):
 
 # GET /api/v1/analytics/summary
 def get_summary(event):
-    params = event.get("queryStringParameters")
+    params = event.get("queryStringParameters") or {}
     location = params.get("suburb")
     startDate = params.get("from")
     endDate = params.get("to")
