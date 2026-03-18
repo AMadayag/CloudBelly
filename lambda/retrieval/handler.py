@@ -1,6 +1,7 @@
 import json
 import boto3
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key, Attr
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('cloudbelly-dev-housing-events')
@@ -20,7 +21,7 @@ def get_dataset_by_id(event):
     response = table.scan(
         FilterExpression=Attr('data').eq(datasetId)
     )
-    items = response.get('Items', [])
+    items = response.get('Items', []) or {}
     item = items[0] if items else {}
   except ClientError as e:
     raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
