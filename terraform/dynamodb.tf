@@ -3,7 +3,7 @@ resource "aws_dynamodb_table" "housing_events" {
   billing_mode = "PAY_PER_REQUEST"
 
   hash_key = "location"
-  range_key = "date"
+  range_key = "eventKey"
 
   attribute {
     name = "location"
@@ -11,7 +11,7 @@ resource "aws_dynamodb_table" "housing_events" {
   }
 
   attribute {
-    name = "date"
+    name = "eventKey"
     type = "S"
   }
 
