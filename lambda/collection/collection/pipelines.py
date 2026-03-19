@@ -48,6 +48,16 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
         super().finish()
         dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
         table = dynamodb.Table(os.environ['TABLE_NAME'])
+
+        datasets_table = dynamodb.Table(os.environ['DATASETS_TABLE_NAME'])
+        datasets_table.put_item(Item={
+            "datasetId": f"ds_{str(uuid.uuid4())}",
+            "name": "ABS Total Value of Dwellings",
+            "datasource": self.crawlerDomain,
+            "locations": list(set([event['area'] for event in self.getEvents()])),
+            "eventCount": len(self.getEvents())
+        })
+        
         for event in self.getEvents():
             house_event_id = f"evt_{uuid.uuid4()}"
             dwelling_event_id = f"evt_{uuid.uuid4()}"
@@ -75,12 +85,4 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "price": event['median_price_of_attached_dwelling_transfers'],
                     "property": "attached_dwelling"
             })
-        
-        datasets_table = dynamodb.Table(os.environ['DATASETS_TABLE_NAME'])
-        datasets_table.put_item(Item={
-            "datasetId": f"ds_{str(uuid.uuid4())}",
-            "name": "ABS Total Value of Dwellings",
-            "datasource": self.crawlerDomain,
-            "locations": list(set([event['area'] for event in self.getEvents()])),
-            "eventCount": len(self.getEvents())
-        })
+
