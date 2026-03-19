@@ -50,7 +50,7 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
         table = dynamodb.Table(os.environ['TABLE_NAME'])
         for event in self.getEvents():
             table.put_item(Item={
-                "location": event['area'],
+                "location": f"{event['area']}#N/A",
                 "eventKey": f"{event['date']}#{str(uuid.uuid4())}",
                 "date": event['date'],
                 "state": event['area'],
@@ -59,7 +59,7 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                 "property": "house",
             })
             table.put_item(Item={
-                "location": event['area'],
+                "location": f"{event['area']}#N/A",
                 "eventKey": f"{event['date']}#{str(uuid.uuid4())}",
                 "date": event['date'],
                 "state": event['area'],
@@ -67,3 +67,12 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                 "price": event['median_price_of_attached_dwelling_transfers'],
                 "property": "attached_dwelling"
             })
+        
+        datasets_table = dynamodb.Table(os.environ['DATASETS_TABLE_NAME'])
+        datasets_table.put_item(Item={
+            "datasetId": f"ds_{str(uuid.uuid4())}",
+            "name": "ABS Total Value of Dwellings",
+            "datasource": self.crawlerDomain,
+            "locations": list(set([event['area'] for event in self.getEvents()])),
+            "eventCount": len(self.getEvents())
+        })
