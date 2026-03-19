@@ -10,6 +10,8 @@ import os
 import json
 import boto3
 
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+
 class DatasetPipeline:
     def __init__(self, name, domain, bucket):
         self.timestamp = datetime.now().isoformat()
@@ -45,23 +47,23 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
     def finish(self):
         super().finish()
         dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
-        table = dynamodb.Table("cloudbelly-dev-housing-events")
+        table = dynamodb.Table(os.environ['TABLE_NAME'])
         for event in self.getEvents():
             table.put_item(Item={
-                "location": event.area, 
-                "eventKey": str(uuid.uuid4()),
-                "date": event.date,
-                "state": event.area,
+                "location": event['area'],
+                "eventKey": f"{event['date']}#{str(uuid.uuid4())}",
+                "date": event['date'],
+                "state": event['area'],
                 "suburb": "N/A",
-                "price": event.median_price_of_established_house_transfers,
+                "price": event['median_price_of_established_house_transfers'],
                 "property": "house",
             })
             table.put_item(Item={
-                "location": event.area, 
-                "eventKey": str(uuid.uuid4()),
-                "date": event.date,
-                "state": event.area,
+                "location": event['area'],
+                "eventKey": f"{event['date']}#{str(uuid.uuid4())}",
+                "date": event['date'],
+                "state": event['area'],
                 "suburb": "N/A",
-                "price": event.median_price_of_attached_dwelling_transfers,
+                "price": event['median_price_of_attached_dwelling_transfers'],
                 "property": "attached_dwelling"
             })

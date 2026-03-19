@@ -5,3 +5,6 @@ testFiles/
 __pycache__/
 scraped
 test.json
+output.json
+package/
+handler.zip
