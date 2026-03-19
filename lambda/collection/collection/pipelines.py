@@ -49,23 +49,31 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
         dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
         table = dynamodb.Table(os.environ['TABLE_NAME'])
         for event in self.getEvents():
-            table.put_item(Item={
-                "location": f"{event['area']}#N/A",
-                "eventKey": f"{event['date']}#{str(uuid.uuid4())}",
-                "date": event['date'],
-                "state": event['area'],
-                "suburb": "N/A",
-                "price": event['median_price_of_established_house_transfers'],
-                "property": "house",
+            house_event_id = f"evt_{uuid.uuid4()}"
+            dwelling_event_id = f"evt_{uuid.uuid4()}"
+
+            if event['median_price_of_established_house_transfers']:
+                table.put_item(Item={
+                    "location": f"{event['area']}#N/A",
+                    "eventId": house_event_id,
+                    "eventKey": f"{event['date']}#{house_event_id}",
+                    "date": event['date'],
+                    "state": event['area'],
+                    "suburb": "N/A",
+                    "price": event['median_price_of_established_house_transfers'],
+                    "property": "house",
             })
-            table.put_item(Item={
-                "location": f"{event['area']}#N/A",
-                "eventKey": f"{event['date']}#{str(uuid.uuid4())}",
-                "date": event['date'],
-                "state": event['area'],
-                "suburb": "N/A",
-                "price": event['median_price_of_attached_dwelling_transfers'],
-                "property": "attached_dwelling"
+            
+            if event['median_price_of_attached_dwelling_transfers']:
+                table.put_item(Item={
+                    "location": f"{event['area']}#N/A",
+                    "eventId": dwelling_event_id,
+                    "eventKey": f"{event['date']}#{dwelling_event_id}",
+                    "date": event['date'],
+                    "state": event['area'],
+                    "suburb": "N/A",
+                    "price": event['median_price_of_attached_dwelling_transfers'],
+                    "property": "attached_dwelling"
             })
         
         datasets_table = dynamodb.Table(os.environ['DATASETS_TABLE_NAME'])
