@@ -21,14 +21,24 @@ def lambda_handler(event, context):
 # GET /api/v1/analytics/summary
 def get_summary(event):
     params = event.get("queryStringParameters") or {}
+    multi_params = event.get("multiValueQueryStringParameters") or {}
+
     state = params.get("state", "NSW")
-    location = f"{state}#{params.get('suburb')}"
+    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+
+    if not suburbs:
+        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+
     startDate = params.get("from")
     endDate = params.get("to")
 
     try:
-        response = get_items(location, startDate, endDate)
-        items = response.get('Items', [])
+        items = []
+
+        for suburb in suburbs:
+            location = f"{state}#{suburb}"
+            response = get_items(location, startDate, endDate)
+            items.extend(response.get('Items', []))
 
         # group prices by suburb
         suburb_prices = {}
@@ -42,58 +52,84 @@ def get_summary(event):
         data_points = []
         for s in labels:
             prices = sorted(suburb_prices[s])
-            data_points.append({
-                "min": min(prices),
-                "q1": statistics.quantiles(prices, n=4)[0],
-                "median": statistics.median(prices),
-                "q3": statistics.quantiles(prices, n=4)[2],
-                "max": max(prices)
-            })
+            if len(prices) < 4:
+                data_points.append({
+                    "min": min(prices),
+                    "q1": None,
+                    "median": statistics.median(prices),
+                    "q3": None,
+                    "max": max(prices)
+                })
+            else:
+                data_points.append({
+                    "min": min(prices),
+                    "q1": statistics.quantiles(prices, n=4)[0],
+                    "median": statistics.median(prices),
+                    "q3": statistics.quantiles(prices, n=4)[2],
+                    "max": max(prices)
+                })
 
         data = {
             "labels": labels,
             "datasets": [{
-                "label": location,
+                "label": f"{state} suburbs" if len(suburbs) > 1 else suburbs[0],
                 "data": data_points
             }]
         }
 
     except ClientError as e:
-        raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
-    'statusCode': 200,
-    'headers': {'Content-Type': 'application/json'},
-    'body': json.dumps(data, default=str)
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps(data, default=str)
     }
 
 # GET /api/v1/analytics/price-trend
 def get_price_trend(event):
     params = event.get("queryStringParameters") or {}
+    multi_params = event.get("multiValueQueryStringParameters") or {}
+
     state = params.get("state", "NSW")
-    location = f"{state}#{params.get('suburb')}"
+    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+
+    if not suburbs:
+        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+
     startDate = params.get("from")
     endDate = params.get("to")
 
     try:
-        response = get_items(location, startDate, endDate)
-        items = response.get('Items', [])
+        all_dates = set()
+        suburb_price_maps = {}
 
-        labels = [item['date'] for item in items]
-        prices = [item['price'] for item in items]
-        # may need to change from suburb to city if unable to access data
-        suburb = items[0]['suburb'] if items else location
+        for suburb in suburbs:
+            location = f"{state}#{suburb}"
+            response = get_items(location, startDate, endDate)
+            items = response.get('Items', [])
+
+            price_map = {item['date']: item['price'] for item in items}
+            suburb_price_maps[suburb] = price_map
+            all_dates.update(price_map.keys())
+
+        sorted_dates = sorted(all_dates)
+
+        datasets = []
+        for suburb in suburbs:
+            price_map = suburb_price_maps[suburb]
+            datasets.append({
+                "label": suburb,
+                "data": [price_map.get(date, None) for date in sorted_dates]
+            })
 
         data = {
-            "labels": labels,
-            "datasets": [{
-                "label": suburb,
-                "data": prices
-            }]
+            "labels": sorted_dates,
+            "datasets": datasets
         }
 
     except ClientError as e:
-        raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
         'statusCode': 200,
