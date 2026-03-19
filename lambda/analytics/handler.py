@@ -24,7 +24,11 @@ def get_summary(event):
     multi_params = event.get("multiValueQueryStringParameters") or {}
 
     state = params.get("state", "NSW")
-    suburbs = multi_params.get("suburb") or [params.get("suburb")]
+    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+
+    if not suburbs:
+        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+
     startDate = params.get("from")
     endDate = params.get("to")
 
@@ -48,13 +52,22 @@ def get_summary(event):
         data_points = []
         for s in labels:
             prices = sorted(suburb_prices[s])
-            data_points.append({
-                "min": min(prices),
-                "q1": statistics.quantiles(prices, n=4)[0],
-                "median": statistics.median(prices),
-                "q3": statistics.quantiles(prices, n=4)[2],
-                "max": max(prices)
-            })
+            if len(prices) < 4:
+                data_points.append({
+                    "min": min(prices),
+                    "q1": None,
+                    "median": statistics.median(prices),
+                    "q3": None,
+                    "max": max(prices)
+                })
+            else:
+                data_points.append({
+                    "min": min(prices),
+                    "q1": statistics.quantiles(prices, n=4)[0],
+                    "median": statistics.median(prices),
+                    "q3": statistics.quantiles(prices, n=4)[2],
+                    "max": max(prices)
+                })
 
         data = {
             "labels": labels,
@@ -65,12 +78,12 @@ def get_summary(event):
         }
 
     except ClientError as e:
-        raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
-    'statusCode': 200,
-    'headers': {'Content-Type': 'application/json'},
-    'body': json.dumps(data, default=str)
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps(data, default=str)
     }
 
 # GET /api/v1/analytics/price-trend
@@ -79,36 +92,44 @@ def get_price_trend(event):
     multi_params = event.get("multiValueQueryStringParameters") or {}
 
     state = params.get("state", "NSW")
-    suburbs = multi_params.get("suburb") or [params.get("suburb")]
+    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+
+    if not suburbs:
+        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+
     startDate = params.get("from")
     endDate = params.get("to")
 
     try:
-        datasets = []
         all_dates = set()
+        suburb_price_maps = {}
 
         for suburb in suburbs:
             location = f"{state}#{suburb}"
             response = get_items(location, startDate, endDate)
             items = response.get('Items', [])
 
-            labels = [item['date'] for item in items]
-            prices = [item['price'] for item in items]
+            price_map = {item['date']: item['price'] for item in items}
+            suburb_price_maps[suburb] = price_map
+            all_dates.update(price_map.keys())
 
-            all_dates.update(labels)
+        sorted_dates = sorted(all_dates)
 
+        datasets = []
+        for suburb in suburbs:
+            price_map = suburb_price_maps[suburb]
             datasets.append({
                 "label": suburb,
-                "data": prices
+                "data": [price_map.get(date, None) for date in sorted_dates]
             })
 
         data = {
-            "labels": sorted(all_dates),
+            "labels": sorted_dates,
             "datasets": datasets
         }
 
     except ClientError as e:
-        raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
         'statusCode': 200,
