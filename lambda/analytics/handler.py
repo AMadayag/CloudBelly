@@ -21,14 +21,20 @@ def lambda_handler(event, context):
 # GET /api/v1/analytics/summary
 def get_summary(event):
     params = event.get("queryStringParameters") or {}
+    multi_params = event.get("multiValueQueryStringParameters") or {}
+
     state = params.get("state", "NSW")
-    location = f"{state}#{params.get('suburb')}"
+    suburbs = multi_params.get("suburb") or [params.get("suburb")]
     startDate = params.get("from")
     endDate = params.get("to")
 
     try:
-        response = get_items(location, startDate, endDate)
-        items = response.get('Items', [])
+        items = []
+
+        for suburb in suburbs:
+            location = f"{state}#{suburb}"
+            response = get_items(location, startDate, endDate)
+            items.extend(response.get('Items', []))
 
         # group prices by suburb
         suburb_prices = {}
@@ -53,7 +59,7 @@ def get_summary(event):
         data = {
             "labels": labels,
             "datasets": [{
-                "label": location,
+                "label": f"{state} suburbs" if len(suburbs) > 1 else suburbs[0],
                 "data": data_points
             }]
         }
@@ -70,26 +76,35 @@ def get_summary(event):
 # GET /api/v1/analytics/price-trend
 def get_price_trend(event):
     params = event.get("queryStringParameters") or {}
+    multi_params = event.get("multiValueQueryStringParameters") or {}
+
     state = params.get("state", "NSW")
-    location = f"{state}#{params.get('suburb')}"
+    suburbs = multi_params.get("suburb") or [params.get("suburb")]
     startDate = params.get("from")
     endDate = params.get("to")
 
     try:
-        response = get_items(location, startDate, endDate)
-        items = response.get('Items', [])
+        datasets = []
+        all_dates = set()
 
-        labels = [item['date'] for item in items]
-        prices = [item['price'] for item in items]
-        # may need to change from suburb to city if unable to access data
-        suburb = items[0]['suburb'] if items else location
+        for suburb in suburbs:
+            location = f"{state}#{suburb}"
+            response = get_items(location, startDate, endDate)
+            items = response.get('Items', [])
 
-        data = {
-            "labels": labels,
-            "datasets": [{
+            labels = [item['date'] for item in items]
+            prices = [item['price'] for item in items]
+
+            all_dates.update(labels)
+
+            datasets.append({
                 "label": suburb,
                 "data": prices
-            }]
+            })
+
+        data = {
+            "labels": sorted(all_dates),
+            "datasets": datasets
         }
 
     except ClientError as e:
