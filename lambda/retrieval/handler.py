@@ -95,7 +95,6 @@ def get_events(event):
         "locations": [item.get("state")],
         "attributes": {
           "price": float(item.get("price") or 0),
-          "suburb": item.get("suburb"),
           "city": item.get("state"),
           "propertyType": item.get("property")
         }
