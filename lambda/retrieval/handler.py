@@ -1,10 +1,13 @@
 import json
+import os
 import boto3
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
 
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table('cloudbelly-dev-housing-events')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table(os.environ['TABLE_NAME'])
+datasets_table = boto3.resource('dynamodb').Table(os.environ['DATASETS_TABLE_NAME'])
+
 
 def lambda_handler(event, context):
   route = event.get("routeKey", "")
@@ -13,8 +16,6 @@ def lambda_handler(event, context):
     return get_events(event)
   elif route == "GET /api/v1/datasets":
     return get_datasets(event)
-  elif route == "GET /api/v1/datasets/{datasetId}":
-    return get_dataset_by_id(event)
   else:
     return {'statusCode': 404, 'body': json.dumps('Not found')}
 
@@ -114,19 +115,14 @@ def get_events(event):
 
 # GET /api/v1/datasets
 def get_datasets(_event):
-  return {
+    try:
+        response = datasets_table.scan()
+        datasets = response.get('Items', [])
+    except ClientError as e:
+        raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
+
+    return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json'},
-        'body': json.dumps({
-            "DataSets": [{
-                "Datasource": "www.abs.gov.au",
-                "Data set type": "Property Sales",
-                "Dataset ID": "s3::abs-housing-data",
-                "Time object": {
-                    "timestamp": "2024-01-01T00:00:00",
-                    "timezone": "Australia/Sydney"
-                },
-                "Locations": ["NSW"],
-            }]
-        })
+        'body': json.dumps({"DataSets": datasets}, default=str)
   }

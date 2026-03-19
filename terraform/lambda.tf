@@ -13,6 +13,7 @@ resource "aws_lambda_function" "collection" {
   environment {
     variables = {
       TABLE_NAME  = var.table_name
+      DATASETS_TABLE_NAME = var.datasets_table_name
       BUCKET_NAME = var.bucket_name
       STAGE = var.stage
     }
@@ -35,6 +36,7 @@ resource "aws_lambda_function" "retrieval" {
   environment {
     variables = {
       TABLE_NAME  = var.table_name
+      DATASETS_TABLE_NAME = var.datasets_table_name
       BUCKET_NAME = var.bucket_name
       STAGE = var.stage
     }
@@ -57,6 +59,7 @@ resource "aws_lambda_function" "analytics" {
   environment {
     variables = {
       TABLE_NAME  = var.table_name
+      DATASETS_TABLE_NAME = var.datasets_table_name
       BUCKET_NAME = var.bucket_name
       STAGE = var.stage
     }
