@@ -92,13 +92,12 @@ def get_events(event):
           "duration": item.get("duration", 0),
           "timezone": item.get("timezone", "Australia/Sydney")
         },
-        "locations": [item.get("suburb"), item.get("state")],
+        "locations": [item.get("state")],
         "attributes": {
           "price": float(item.get("price") or 0),
           "suburb": item.get("suburb"),
-          "state": item.get("state"),
-          "address": item.get("address"),
-          "propertyType": item.get("property_type")
+          "city": item.get("state"),
+          "propertyType": item.get("property")
         }
       }
       for item in items
