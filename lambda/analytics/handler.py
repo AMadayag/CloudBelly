@@ -72,7 +72,7 @@ def get_summary(event):
         data = {
             "labels": labels,
             "datasets": [{
-                "label": f"{state} suburbs" if len(suburbs) > 1 else suburbs[0],
+                "label": state,
                 "data": data_points
             }]
         }
