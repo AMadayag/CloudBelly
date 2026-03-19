@@ -1,26 +1,23 @@
 import json
 import os
-from collection.pipelines import DatasetPipeline
+from collection.pipelines import *
 from collection.spiders.www_abs_gov_au.total_value_of_dwellings import TotalValueOfDwellingsScraper
 
 def lambda_handler(event, context):
     bucket = os.environ.get("BUCKET_NAME")
-    # settings.set("FEEDS", {f"s3://{bucket}/scraped/%(name)s_%(time)s.json": {"format": "json", "indent": 2}})
-    # settings.set("FEEDS", {f"test.json": {"format": "json", "indent": 2}})
 
-    spiders = [
-        TotalValueOfDwellingsScraper()
-    ]
-
+    spiders = []
     pipelines = []
-    for spider in spiders:
-        pipeline = DatasetPipeline(spider.getName(), spider.getDomain(), bucket)
-        spider.setPipeline(pipeline)
-        pipelines.append(pipeline)
+
+    absScraper = TotalValueOfDwellingsScraper()
+    absPipeline = TotalValueOfDwellingsPipeline(absScraper.getName(), absScraper.getDomain(), bucket)
+    absScraper.setPipeline(absPipeline)
+    spiders.append(absScraper)
+    pipelines.append(absPipeline)
 
     try:
-        for x in spiders:
-            x.start()
+        for spider in spiders:
+            spider.start()
 
         for pipeline in pipelines:
             pipeline.finish()
