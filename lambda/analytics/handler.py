@@ -158,5 +158,22 @@ def get_items(location, startDate, endDate):
             )
     except ClientError as e:
         raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
-    
+
+    response['Items'] = [parse_item(i) for i in response.get('Items', [])]
     return response
+
+# flattens nested items
+def parse_item(item):
+    if 'date' in item and 'price' in item and 'suburb' in item:
+        return item
+
+    attrs = item.get('Attributes', {})
+    timestamp = item.get('Time object', {}).get('timestamp', '')
+    date = timestamp[:10] if timestamp else ''
+
+    return {
+        'date': date,
+        'price': attrs.get('price'),
+        'suburb': attrs.get('suburb'),
+        'state': attrs.get('state'),
+    }
