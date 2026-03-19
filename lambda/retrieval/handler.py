@@ -1,10 +1,13 @@
 import json
+import os
 import boto3
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
 
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table('cloudbelly-dev-housing-events')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table(os.environ['TABLE_NAME'])
+datasets_table = boto3.resource('dynamodb').Table(os.environ['DATASETS_TABLE_NAME'])
+
 
 def lambda_handler(event, context):
   route = event.get("routeKey", "")
@@ -13,8 +16,6 @@ def lambda_handler(event, context):
     return get_events(event)
   elif route == "GET /api/v1/datasets":
     return get_datasets(event)
-  elif route == "GET /api/v1/datasets/{datasetId}":
-    return get_dataset_by_id(event)
   else:
     return {'statusCode': 404, 'body': json.dumps('Not found')}
 
@@ -97,7 +98,7 @@ def get_events(event):
           "suburb": item.get("suburb"),
           "state": item.get("state"),
           "address": item.get("address"),
-          "propertyType": item.get("propertyType")
+          "propertyType": item.get("property_type")
         }
       }
       for item in items
@@ -114,74 +115,14 @@ def get_events(event):
 
 # GET /api/v1/datasets
 def get_datasets(_event):
-  try:
-    response = table.scan()
-    items = response.get('Items', [])
+    try:
+        response = datasets_table.scan()
+        datasets = response.get('Items', [])
+    except ClientError as e:
+        raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
 
-    # grouping events by sourceFileKey (each file = one dataset)
-    datasets = {}
-    for item in items:
-      source = item.get('sourceFileKey', 'unknown')
-      if source not in datasets:
-        datasets[source] = {
-          "Datasource": item.get('datasource', ''),
-          "Data set type": item.get('datasetType', ''),
-          "Dataset ID": f"s3::{source}",
-          "Time object": {
-            "timestamp": item.get('ingestedAt', ''),
-            "timezone": item.get('timezone', '')
-          },
-          "Locations": [],
-          "Events": []
-        }
-
-      state = item.get('state', '')
-      suburb = item.get('suburb', '')
-      if state not in datasets[source]["Locations"]:
-        datasets[source]["Locations"].append(state)
-
-      datasets[source]["Events"].append({
-        "Event ID": item.get('eventId'),
-        "Event type": item.get("eventType", "property-sale"),
-        "Time object": {
-          "timestamp": f"{item.get('date')}T00:00:00",
-          "duration": item.get("duration", 0),
-          "timezone": item.get("timezone", "Australia/Sydney")
-        },
-        "Locations": [suburb, state],
-        "Attributes": {
-          "price": float(item.get('price', 0)),
-          "suburb": suburb,
-          "state": state,
-          "address": item.get('address'),
-          "propertyType": item.get('propertyType')
-        }
-      })
-
-  except ClientError as e:
-    raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
-
-  return {
-    'statusCode': 200,
-    'headers': {'Content-Type': 'application/json'},
-    'body': json.dumps({"DataSets": list(datasets.values())}, default=str)
-  }
-
-
-# GET /api/v1/datasets/{datasetId}
-def get_dataset_by_id(event):
-  try:
-    datasetId = event["pathParameters"]["datasetId"]
-    response = table.scan(
-        FilterExpression=Attr('data').eq(datasetId)
-    )
-    items = response.get('Items', []) or {}
-    item = items[0] if items else {}
-  except ClientError as e:
-    raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
-
-  return {
-    'statusCode': 200,
-    'headers': {'Content-Type': 'application/json'},
-    'body': json.dumps(item, default=str)
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps({"DataSets": datasets}, default=str)
   }

@@ -21,3 +21,21 @@ resource "aws_dynamodb_table" "housing_events" {
     Stage = var.stage
   }
 }
+
+resource "aws_dynamodb_table" "datasets" {
+  name = var.datasets_table_name
+  billing_mode = "PAY_PER_REQUEST"
+
+  hash_key = "datasetId"
+
+  attribute {
+    name = "datasetId"
+    type = "S"
+  }
+
+  tags = {
+    Name = var.datasets_table_name
+    Project = var.project_name
+    Stage = var.stage
+  }
+}
