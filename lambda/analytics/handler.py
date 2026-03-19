@@ -43,7 +43,7 @@ def get_summary(event):
         # group prices by suburb
         suburb_prices = {}
         for item in items:
-            s = item['suburb']
+            s = item['state']
             if s not in suburb_prices:
                 suburb_prices[s] = []
             suburb_prices[s].append(float(item['price']))
