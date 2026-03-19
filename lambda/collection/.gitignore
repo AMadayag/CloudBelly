@@ -1,0 +1,7 @@
+scraped_data/
+scraped/
+testFiles/
+.venv
+__pycache__/
+scraped
+test.json
