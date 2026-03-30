@@ -85,7 +85,7 @@ class TestParseDataSheet:
       assert "number_of_attached_dwelling_transfers" in item
 
     def test_price_multiplied_by_1000(self, scraper, xlsx_response):
-      """Raw xlsx value of 950 should become 950000."""
+      # Raw xlsx value of 950 should become 950000
       scraper.parseDataSheet(xlsx_response)
       items = [call[0][0] for call in scraper.pipeline.processItem.call_args_list]
       nsw_first = next(i for i in items if i["area"] == "New South Wales" and i["date"] == "Sep-2023")
@@ -93,7 +93,7 @@ class TestParseDataSheet:
       assert nsw_first["median_price_of_attached_dwelling_transfers"] == 720000
 
     def test_area_extracted_from_column_header(self, scraper, xlsx_response):
-      """Area should be the second-to-last segment of the semicolon-delimited header."""
+      # Area should be the second-to-last segment of the semicolon-delimited header
       scraper.parseDataSheet(xlsx_response)
       items = [call[0][0] for call in scraper.pipeline.processItem.call_args_list]
       areas = {i["area"] for i in items}
@@ -101,14 +101,14 @@ class TestParseDataSheet:
       assert "Victoria" in areas
 
     def test_dates_are_strings(self, scraper, xlsx_response):
-      """Dates should come through as plain strings, not datetime objects."""
+      # Dates should come through as plain strings, not datetime objects
       scraper.parseDataSheet(xlsx_response)
       items = [call[0][0] for call in scraper.pipeline.processItem.call_args_list]
       for item in items:
         assert isinstance(item["date"], str)
 
     def test_null_values_passed_through_as_none(self, scraper):
-      """Blank cells in the xlsx should produce None, not NaN."""
+      # Blank cells in the xlsx should produce None, not NaN
       import pandas as pd
 
       # Build a response where house price is blank for one row
