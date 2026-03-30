@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['TABLE_NAME'])
 
+
 def lambda_handler(event, context):
     route = event.get("routeKey", "")
 
@@ -17,6 +18,7 @@ def lambda_handler(event, context):
         return get_summary(event)
     else:
         return {'statusCode': 404, 'body': json.dumps('Not found')}
+
 
 # GET /api/v1/analytics/summary
 def get_summary(event):
@@ -86,6 +88,7 @@ def get_summary(event):
         'body': json.dumps(data, default=str)
     }
 
+
 # GET /api/v1/analytics/price-trend
 def get_price_trend(event):
     params = event.get("queryStringParameters") or {}
@@ -137,6 +140,7 @@ def get_price_trend(event):
         'body': json.dumps(data, default=str)
     }
 
+
 # gets items with optional start and end date params
 def get_items(location, startDate, endDate):
     try:
@@ -161,6 +165,7 @@ def get_items(location, startDate, endDate):
 
     response['Items'] = [parse_item(i) for i in response.get('Items', [])]
     return response
+
 
 # flattens nested items
 def parse_item(item):

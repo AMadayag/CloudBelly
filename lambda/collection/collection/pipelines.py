@@ -85,4 +85,3 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "price": event['median_price_of_attached_dwelling_transfers'],
                     "property": "attached_dwelling"
             })
-

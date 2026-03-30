@@ -3,7 +3,6 @@ import pandas as pd
 from lxml import html
 import io
 import re
-from collection.pipelines import DatasetPipeline
 from collection.spiders.spider import Spider
 
 class TotalValueOfDwellingsScraper(Spider):
