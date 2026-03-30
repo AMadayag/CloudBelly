@@ -9,6 +9,7 @@ import uuid
 import os
 import json
 import boto3
+from pathlib import Path
 
 class DatasetPipeline:
     def __init__(self, name, domain, bucket):
@@ -37,7 +38,8 @@ class DatasetPipeline:
             }
         }
 
-        path = f"scraped/{self.spiderName}_{self.timestamp}.json"
+        path = f"scraped/{self.spiderDomain}/{self.spiderName}_{self.timestamp}.json"
+        # Path(path).parent.mkdir(parents=True, exist_ok=True)
         # file = open(path, "w")
         # json.dump(data, file, indent=2)
         # self.log(f"Saved to {path}")
