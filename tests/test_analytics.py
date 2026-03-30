@@ -40,10 +40,18 @@ def dynamodb_table():
 
         # Insert test data
         items = [
-            {"location": "Sydney#N/A", "eventKey": "2024-03-15#evt_001", "date": "2024-03-15", "state": "Sydney", "suburb": "N/A", "price": 950000},
-            {"location": "Sydney#N/A", "eventKey": "2024-06-15#evt_002", "date": "2024-06-15", "state": "Sydney", "suburb": "N/A", "price": 1020000},
-            {"location": "Sydney#N/A", "eventKey": "2024-09-15#evt_003", "date": "2024-09-15", "state": "Sydney", "suburb": "N/A", "price": 880000},
-            {"location": "Sydney#N/A", "eventKey": "2024-12-15#evt_004", "date": "2024-12-15", "state": "Sydney", "suburb": "N/A", "price": 1100000},
+            {"location": "Sydney#N/A", "eventKey": "2024-03-15#evt_001",
+                "date": "2024-03-15", "state": "Sydney", "suburb": "N/A",
+                "price": 950000},
+            {"location": "Sydney#N/A", "eventKey": "2024-06-15#evt_002",
+                "date": "2024-06-15", "state": "Sydney", "suburb": "N/A",
+                "price": 1020000},
+            {"location": "Sydney#N/A", "eventKey": "2024-09-15#evt_003",
+                "date": "2024-09-15", "state": "Sydney", "suburb": "N/A",
+                "price": 880000},
+            {"location": "Sydney#N/A", "eventKey": "2024-12-15#evt_004",
+                "date": "2024-12-15", "state": "Sydney", "suburb": "N/A",
+                "price": 1100000},
         ]
         for item in items:
             table.put_item(Item=item)

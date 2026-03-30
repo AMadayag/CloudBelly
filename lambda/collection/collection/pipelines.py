@@ -12,6 +12,7 @@ import boto3
 
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
 
+
 class DatasetPipeline:
     def __init__(self, name, domain, bucket):
         self.timestamp = datetime.now().isoformat()
@@ -36,12 +37,18 @@ class DatasetPipeline:
             }
         }
 
-        path = f"scraped/{self.crawlerDomain}/{self.crawlerName}_{self.timestamp}.json"
-        # file = open(path, "w")
-        # json.dump(data, file, indent=2)
+        path = (
+            f"scraped/{self.crawlerDomain}"
+            f"/{self.crawlerName}_{self.timestamp}.json"
+        )
         s3Client = boto3.client("s3", region_name=AWS_REGION)
-        s3Client.put_object(Bucket=self.bucket, Key=path, 
-            Body=json.dumps(data).encode("utf-8"), ContentType="application/json")
+        s3Client.put_object(
+            Bucket=self.bucket,
+            Key=path,
+            Body=json.dumps(data).encode("utf-8"),
+            ContentType="application/json"
+        )
+
 
 class TotalValueOfDwellingsPipeline(DatasetPipeline):
     def finish(self):
@@ -54,10 +61,12 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
             "datasetId": f"ds_{str(uuid.uuid4())}",
             "name": "ABS Total Value of Dwellings",
             "datasource": self.crawlerDomain,
-            "locations": list(set([event['area'] for event in self.getEvents()])),
+            "locations": list(set(
+                [event['area'] for event in self.getEvents()]
+            )),
             "eventCount": len(self.getEvents())
         })
-        
+
         for event in self.getEvents():
             house_event_id = f"evt_{uuid.uuid4()}"
             dwelling_event_id = f"evt_{uuid.uuid4()}"
@@ -70,10 +79,11 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "date": event['date'],
                     "state": event['area'],
                     "suburb": "N/A",
-                    "price": event['median_price_of_established_house_transfers'],
+                    "price": event[
+                                'median_price_of_established_house_transfers'],
                     "property": "house",
-            })
-            
+                })
+
             if event['median_price_of_attached_dwelling_transfers']:
                 table.put_item(Item={
                     "location": f"{event['area']}#N/A",
@@ -82,6 +92,7 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "date": event['date'],
                     "state": event['area'],
                     "suburb": "N/A",
-                    "price": event['median_price_of_attached_dwelling_transfers'],
+                    "price": event[
+                                'median_price_of_attached_dwelling_transfers'],
                     "property": "attached_dwelling"
-            })
+                })

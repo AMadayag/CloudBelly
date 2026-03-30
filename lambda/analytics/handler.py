@@ -26,10 +26,16 @@ def get_summary(event):
     multi_params = event.get("multiValueQueryStringParameters") or {}
 
     state = params.get("state", "NSW")
-    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+    suburbs = (
+        multi_params.get("suburb")
+        or ([params.get("suburb")] if params.get("suburb") else None)
+    )
 
     if not suburbs:
-        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'At least one suburb is required'})
+        }
 
     startDate = params.get("from")
     endDate = params.get("to")
@@ -95,10 +101,16 @@ def get_price_trend(event):
     multi_params = event.get("multiValueQueryStringParameters") or {}
 
     state = params.get("state", "NSW")
-    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+    suburbs = (
+        multi_params.get("suburb")
+        or ([params.get("suburb")] if params.get("suburb") else None)
+    )
 
     if not suburbs:
-        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'At least one suburb is required'})
+        }
 
     startDate = params.get("from")
     endDate = params.get("to")
@@ -146,15 +158,24 @@ def get_items(location, startDate, endDate):
     try:
         if startDate and endDate:
             response = table.query(
-                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').between(startDate, f"{endDate}#zzz")
+                KeyConditionExpression=(
+                    Key('location').eq(location)
+                    & Key('eventKey').between(startDate, f"{endDate}#zzz")
+                )
             )
         elif startDate:
             response = table.query(
-                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').gte(startDate)
+                KeyConditionExpression=(
+                    Key('location').eq(location)
+                    & Key('eventKey').gte(startDate)
+                )
             )
         elif endDate:
             response = table.query(
-                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').lte(f"{endDate}#zzz")
+                KeyConditionExpression=(
+                    Key('location').eq(location)
+                    & Key('eventKey').lte(f"{endDate}#zzz")
+                )
             )
         else:
             response = table.query(
