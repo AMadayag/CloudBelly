@@ -3,10 +3,11 @@ import pandas as pd
 from lxml import html
 import io
 import re
+
 from collection.pipelines import DatasetPipeline
 from collection.spiders.spider import Spider
 
-class TotalValueOfDwellingsScraper(Spider):
+class TotalValueOfDwellingsSpider(Spider):
     def __init__(self):
         super().__init__("total_value_of_dwellings", "www.abs.gov.au")
 
@@ -14,6 +15,7 @@ class TotalValueOfDwellingsScraper(Spider):
         self.log("started")
         url = "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release"
         self.parse(requests.get(url))
+        self.pipeline.finish()
         self.log("Finished")
 
     def parse(self, response):
@@ -76,4 +78,3 @@ class TotalValueOfDwellingsScraper(Spider):
                     "median_price_of_attached_dwelling_transfers": x[3],
                     "number_of_attached_dwelling_transfers": x[4],
                 })
-

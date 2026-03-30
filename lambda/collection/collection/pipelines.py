@@ -14,8 +14,8 @@ class DatasetPipeline:
     def __init__(self, name, domain, bucket):
         self.timestamp = datetime.now().isoformat()
         self.events = []
-        self.crawlerName = name
-        self.crawlerDomain = domain
+        self.spiderName = name
+        self.spiderDomain = domain
         self.bucket = bucket
 
     def processItem(self, item):
@@ -24,19 +24,23 @@ class DatasetPipeline:
     def getEvents(self):
         return self.events
 
+    def log(self, message):
+        print(f"[Pipeline:{self.spiderName}] LOG: {message}")
+
     def finish(self):
         data = {
             "dataset": {
-                "data_source": self.crawlerDomain,
-                "data_set_type": self.crawlerName,
+                "data_source": self.spiderDomain,
+                "data_set_type": self.spiderName,
                 "timestamp": self.timestamp,
                 "events": self.events
             }
         }
 
-        path = f"scraped/{self.crawlerDomain}/{self.crawlerName}_{self.timestamp}.json"
+        path = f"scraped/{self.spiderName}_{self.timestamp}.json"
         # file = open(path, "w")
         # json.dump(data, file, indent=2)
+        # self.log(f"Saved to {path}")
         s3Client = boto3.client("s3", region_name=AWS_REGION)
         s3Client.put_object(Bucket=self.bucket, Key=path, 
             Body=json.dumps(data).encode("utf-8"), ContentType="application/json")
@@ -48,20 +52,43 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
         table = dynamodb.Table("cloudbelly-dev-housing-events")
         for event in self.getEvents():
             table.put_item(Item={
-                "location": event.area, 
-                "eventKey": str(uuid.uuid4()),
+                "eventId": str(uuid.uuid4()),
                 "date": event.date,
                 "state": event.area,
                 "suburb": "N/A",
-                "price": event.median_price_of_established_house_transfers,
-                "property": "house",
+                "value": event.median_price_of_established_house_transfers,
+                "propertyType": "house",
             })
             table.put_item(Item={
-                "location": event.area, 
-                "eventKey": str(uuid.uuid4()),
+                "eventId": str(uuid.uuid4()),
                 "date": event.date,
                 "state": event.area,
                 "suburb": "N/A",
-                "price": event.median_price_of_attached_dwelling_transfers,
-                "property": "attached_dwelling"
+                "value": event.median_price_of_attached_dwelling_transfers,
+                "propertyType": "attached_dwelling"
+            })
+
+class PropertySalesInformationPipeline(DatasetPipeline):
+    def finish(self):
+        super().finish()
+        dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+        table = dynamodb.Table("cloudbelly-dev-housing-events")
+        for event in self.getEvents():
+            propertyType = "N/A"
+            if event["Primary purpose"] == "Residence" \
+            and event["Property unit number"] == "":
+                propertyType = "house"
+            elif event["Primary purpose"] == "Residence" \
+            and event["Property unit number"] != "":
+                propertyType = "unit"
+            else:
+                propertyType = event["Primary purpose"]
+
+            table.put_item(Item={
+                "eventId": str(uuid.uuid4()),
+                "date": event["Settlement date"],
+                "state": "NSW",
+                "suburb": event["Property locality"],
+                "value": event["Purchase price"],
+                "propertyType": propertyType,
             })
