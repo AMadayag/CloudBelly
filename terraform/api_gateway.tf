@@ -34,12 +34,6 @@ resource "aws_apigatewayv2_route" "get_datasets" {
   target = "integrations/${aws_apigatewayv2_integration.retrieval.id}"
 }
 
-resource "aws_apigatewayv2_route" "get_dataset_by_id" {
-  api_id = aws_apigatewayv2_api.housing_api.id
-  route_key = "GET /api/v1/datasets/{datasetId}"
-  target = "integrations/${aws_apigatewayv2_integration.retrieval.id}"
-}
-
 resource "aws_apigatewayv2_integration" "analytics" {
   api_id = aws_apigatewayv2_api.housing_api.id
   integration_type = "AWS_PROXY"

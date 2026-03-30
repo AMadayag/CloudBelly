@@ -22,8 +22,14 @@ variable "table_name" {
   default     = "cloudbelly-dev-housing-events"
 }
 
+variable "datasets_table_name" {
+  description = "DynamoDB datasets table name"
+  type        = string
+  default     = "cloudbelly-dev-datasets"
+}
+
 variable "bucket_name" {
   description = "S3 bucket name for raw housing data"
   type        = string
-  default     = "cloudbelly-dev-raw-events"
+  default     = "cloudbelly-team-dev-raw-events"
 }
