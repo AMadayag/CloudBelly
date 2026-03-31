@@ -13,7 +13,6 @@ def generate_pdf(input_path: str, output_path: str) -> None:
     with open(input_path) as f:
         raw = json.load(f)
 
-    # Lambda response wraps the actual body as a JSON string
     body = json.loads(raw.get("body", "{}"))
 
     summary = body.get("summary", {})
@@ -25,7 +24,6 @@ def generate_pdf(input_path: str, output_path: str) -> None:
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # ---- Header ----
     pdf.set_font("Helvetica", "B", 20)
     pdf.cell(0, 12, "CloudBelly - E2E Test Report", ln=True, align="C")
 
@@ -34,7 +32,6 @@ def generate_pdf(input_path: str, output_path: str) -> None:
     pdf.cell(0, 6, f"API: {base_url}", ln=True, align="C")
     pdf.ln(8)
 
-    # ---- Summary box ----
     pdf.set_font("Helvetica", "B", 13)
     pdf.cell(0, 8, "Summary", ln=True)
     pdf.set_font("Helvetica", "", 11)
@@ -54,7 +51,6 @@ def generate_pdf(input_path: str, output_path: str) -> None:
     pdf.cell(0, 6, f"Total: {total}  |  Passed: {passed}  |  Failed: {failed}  |  Errors: {errored}", ln=True)
     pdf.ln(6)
 
-    # ---- Results table ----
     pdf.set_font("Helvetica", "B", 13)
     pdf.cell(0, 8, "Test Results", ln=True)
 
