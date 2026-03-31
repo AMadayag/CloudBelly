@@ -1,5 +1,5 @@
 resource "aws_apigatewayv2_api" "housing_api" {
-  name = "${var.project_name}-api-${var.stage}"
+  name = "${local.project_name}-api-${local.stage}"
   protocol_type = "HTTP"
 
   cors_configuration {
@@ -11,7 +11,7 @@ resource "aws_apigatewayv2_api" "housing_api" {
 
 resource "aws_apigatewayv2_stage" "housing_api" {
   api_id = aws_apigatewayv2_api.housing_api.id
-  name = var.stage
+  name = local.stage
   auto_deploy = true
 }
 

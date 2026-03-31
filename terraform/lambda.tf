@@ -4,7 +4,7 @@ locals {
 
 resource "aws_lambda_function" "collection" {
   filename = "../lambda/collection/handler.zip"
-  function_name = "${var.project_name}-collection-${var.stage}"
+  function_name = "${local.project_name}-collection-${local.stage}"
   role = local.lab_role_arn
   handler = "handler.lambda_handler"
   runtime = "python3.11"
@@ -12,22 +12,22 @@ resource "aws_lambda_function" "collection" {
 
   environment {
     variables = {
-      TABLE_NAME  = var.table_name
-      DATASETS_TABLE_NAME = var.datasets_table_name
-      BUCKET_NAME = var.bucket_name
-      STAGE = var.stage
+      TABLE_NAME  = local.table_name
+      DATASETS_TABLE_NAME = local.datasets_table_name
+      BUCKET_NAME = local.bucket_name
+      STAGE = local.stage
     }
   }
 
   tags = {
-    Project = var.project_name
-    Stage = var.stage
+    Project = local.project_name
+    Stage = local.stage
   }
 }
 
 resource "aws_lambda_function" "retrieval" {
   filename = "../lambda/retrieval/handler.zip"
-  function_name = "${var.project_name}-retrieval-${var.stage}"
+  function_name = "${local.project_name}-retrieval-${local.stage}"
   role = local.lab_role_arn
   handler = "handler.lambda_handler"
   runtime = "python3.11"
@@ -35,22 +35,22 @@ resource "aws_lambda_function" "retrieval" {
 
   environment {
     variables = {
-      TABLE_NAME  = var.table_name
-      DATASETS_TABLE_NAME = var.datasets_table_name
-      BUCKET_NAME = var.bucket_name
-      STAGE = var.stage
+      TABLE_NAME  = local.table_name
+      DATASETS_TABLE_NAME = local.datasets_table_name
+      BUCKET_NAME = local.bucket_name
+      STAGE = local.stage
     }
   }
 
   tags = {
-    Project = var.project_name
-    Stage = var.stage
+    Project = local.project_name
+    Stage = local.stage
   }
 }
 
 resource "aws_lambda_function" "analytics" {
   filename = "../lambda/analytics/handler.zip"
-  function_name = "${var.project_name}-analytics-${var.stage}"
+  function_name = "${local.project_name}-analytics-${local.stage}"
   role = local.lab_role_arn
   handler = "handler.lambda_handler"
   runtime = "python3.11"
@@ -58,15 +58,15 @@ resource "aws_lambda_function" "analytics" {
 
   environment {
     variables = {
-      TABLE_NAME  = var.table_name
-      DATASETS_TABLE_NAME = var.datasets_table_name
-      BUCKET_NAME = var.bucket_name
-      STAGE = var.stage
+      TABLE_NAME  = local.table_name
+      DATASETS_TABLE_NAME = local.datasets_table_name
+      BUCKET_NAME = local.bucket_name
+      STAGE = local.stage
     }
   }
 
   tags = {
-    Project = var.project_name
-    Stage = var.stage
+    Project = local.project_name
+    Stage = local.stage
   }
 }

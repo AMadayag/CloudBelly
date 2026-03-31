@@ -1,8 +1,8 @@
 locals {
   lambda_functions = {
-    collection = "housing-api-collection-dev"
-    retrieval  = "housing-api-retrieval-dev"
-    analytics  = "housing-api-analytics-dev"
+    collection = "${local.project_name}-collection-${local.stage}"
+    retrieval  = "${local.project_name}-retrieval-${local.stage}"
+    analytics  = "${local.project_name}-analytics-${local.stage}"
   }
 }
 
@@ -14,9 +14,9 @@ resource "aws_cloudwatch_log_metric_filter" "error_count" {
   pattern        = "{ $.event = \"dynamodb_error\" }"
 
   metric_transformation {
-    name      = "ErrorCount"
-    namespace = "CloudBelly/${each.key}"
-    value     = "1"
+    name          = "ErrorCount"
+    namespace     = "CloudBelly/${each.key}"
+    value         = "1"
     default_value = "0"
   }
 }
@@ -27,9 +27,9 @@ resource "aws_cloudwatch_log_metric_filter" "validation_error_count" {
   pattern        = "{ $.event = \"validation_error\" }"
 
   metric_transformation {
-    name      = "ValidationErrorCount"
-    namespace = "CloudBelly/retrieval"
-    value     = "1"
+    name          = "ValidationErrorCount"
+    namespace     = "CloudBelly/retrieval"
+    value         = "1"
     default_value = "0"
   }
 }
@@ -40,14 +40,13 @@ resource "aws_cloudwatch_log_metric_filter" "full_scan_count" {
   pattern        = "{ $.event = \"full_scan\" }"
 
   metric_transformation {
-    name      = "FullScanCount"
-    namespace = "CloudBelly/retrieval"
-    value     = "1"
+    name          = "FullScanCount"
+    namespace     = "CloudBelly/retrieval"
+    value         = "1"
     default_value = "0"
   }
 }
 
-#lambda errors for all 3 functions
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = local.lambda_functions
 
@@ -67,7 +66,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   }
 }
 
-#lambda duration alarm, if retrieval takes > 5 seconds
 resource "aws_cloudwatch_metric_alarm" "retrieval_duration" {
   alarm_name          = "cloudbelly-retrieval-high-duration"
   alarm_description   = "Retrieval Lambda p90 duration exceeding 5 seconds"
@@ -85,7 +83,6 @@ resource "aws_cloudwatch_metric_alarm" "retrieval_duration" {
   }
 }
 
-#dynamoDB error alarm
 resource "aws_cloudwatch_metric_alarm" "dynamodb_errors" {
   for_each = local.lambda_functions
 
@@ -101,10 +98,9 @@ resource "aws_cloudwatch_metric_alarm" "dynamodb_errors" {
   treat_missing_data  = "notBreaching"
 }
 
-#alarm for full table scan
 resource "aws_cloudwatch_metric_alarm" "full_scan_alarm" {
   alarm_name          = "cloudbelly-retrieval-full-scan-frequency"
-  alarm_description   = "Full DynamoDB scans occurring frequently — consider requiring state param"
+  alarm_description   = "Full DynamoDB scans occurring frequently"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "FullScanCount"
@@ -127,9 +123,9 @@ resource "aws_cloudwatch_dashboard" "cloudbelly" {
         width  = 8
         height = 6
         properties = {
-          title  = "Lambda Invocations"
-          region = var.aws_region
-          view   = "timeSeries"
+          title   = "Lambda Invocations"
+          region  = var.aws_region
+          view    = "timeSeries"
           stacked = false
           metrics = [
             ["AWS/Lambda", "Invocations", "FunctionName", local.lambda_functions.collection, { label = "Collection" }],
