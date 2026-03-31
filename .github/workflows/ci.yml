@@ -40,7 +40,7 @@ jobs:
         run: pip install mypy boto3-stubs
 
       - name: Run type checker
-        run: mypy lambda/ --ignore-missing-imports
+        run: mypy lambda/ --ignore-missing-imports --explicit-package-bases
 
   test:
     name: Test and Coverage
@@ -61,6 +61,10 @@ jobs:
           pip install -r lambda/analytics/requirements.txt
 
       - name: Run tests with coverage
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
         run: |
           pytest tests/ \
             --cov=lambda \
