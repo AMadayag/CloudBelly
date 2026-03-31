@@ -43,7 +43,7 @@ jobs:
         run: pip install mypy boto3-stubs
 
       - name: Run type checker
-        run: mypy lambda/ --ignore-missing-imports --explicit-package-bases
+        run: mypy lambda/ --ignore-missing-imports --explicit-package-bases --exclude lambda/testing/package
 
   test:
     name: Test and Coverage
