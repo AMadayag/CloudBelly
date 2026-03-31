@@ -151,7 +151,10 @@ class TestTotalValueOfDwellingsPipeline:
 
 class TestLambdaHandler:
     def test_handler_returns_200_on_success(self, aws_resources):
-        with patch("collection.spiders.www_abs_gov_au.total_value_of_dwellings.TotalValueOfDwellingsScraper") as MockScraper:
+        with patch(
+            "collection.spiders.www_abs_gov_au"
+            ".total_value_of_dwellings.TotalValueOfDwellingsScraper"
+            ) as MockScraper:
             mock_instance = MagicMock()
             MockScraper.return_value = mock_instance
             mock_instance.getName.return_value = "total_value_of_dwellings"

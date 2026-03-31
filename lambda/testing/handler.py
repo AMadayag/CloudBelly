@@ -106,24 +106,25 @@ def test_price_trend_response_shape():
 
 ALL_TESTS = [
     # Events
-    ("GET /events returns 200",               test_events_returns_200),
-    ("GET /events returns events key",         test_events_returns_events_key),
+    ("GET /events returns 200", test_events_returns_200),
+    ("GET /events returns events key", test_events_returns_events_key),
     ("GET /events missing suburb returns 400", test_events_missing_suburb_returns_400),
-    ("GET /events with date filter",           test_events_with_date_filter),
+    ("GET /events with date filter", test_events_with_date_filter),
 
     # Datasets
-    ("GET /datasets returns 200",              test_datasets_returns_200),
-    ("GET /datasets returns datasets key",     test_datasets_returns_datasets_key),
+    ("GET /datasets returns 200", test_datasets_returns_200),
+    ("GET /datasets returns datasets key", test_datasets_returns_datasets_key),
 
     # Summary
-    ("GET /analytics/summary returns 200",              test_summary_returns_200),
-    ("GET /analytics/summary missing suburb 400",       test_summary_missing_suburb_returns_400),
-    ("GET /analytics/summary response shape",           test_summary_response_shape),
+    ("GET /analytics/summary returns 200", test_summary_returns_200),
+    ("GET /analytics/summary missing suburb 400", test_summary_missing_suburb_returns_400),
+    ("GET /analytics/summary response shape", test_summary_response_shape),
 
     # Price trend
-    ("GET /analytics/price-trend returns 200",          test_price_trend_returns_200),
-    ("GET /analytics/price-trend missing suburb 400",   test_price_trend_missing_suburb_returns_400),
-    ("GET /analytics/price-trend response shape",       test_price_trend_response_shape),
+    ("GET /analytics/price-trend returns 200", test_price_trend_returns_200),
+    ("GET /analytics/price-trend missing suburb 400",
+    test_price_trend_missing_suburb_returns_400),
+    ("GET /analytics/price-trend response shape", test_price_trend_response_shape),
 ]
 
 

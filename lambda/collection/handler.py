@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from collection.pipelines import *
+from collection.pipelines import TotalValueOfDwellingsPipeline
 from collection.spiders.www_abs_gov_au.total_value_of_dwellings import TotalValueOfDwellingsScraper
 
 logger = logging.getLogger()
@@ -40,7 +40,7 @@ def lambda_handler(event, context):
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({f'message': 'Internal Error: {str(e)}'})
+            'body': json.dumps({'message': f'Internal Error: {str(e)}'})
         }
     else:
         logger.info(json.dumps({"event": "collection_success", "spiders_run": len(spiders)}))
