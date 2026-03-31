@@ -70,3 +70,24 @@ resource "aws_lambda_function" "analytics" {
     Stage = local.stage
   }
 }
+
+resource "aws_lambda_function" "testing" {
+  filename      = "../lambda/testing/handler.zip"
+  function_name = "${local.project_name}-testing-${local.stage}"
+  role          = local.lab_role_arn
+  handler       = "handler.lambda_handler"
+  runtime       = "python3.11"
+  timeout       = 60
+
+  environment {
+    variables = {
+      API_BASE_URL = "https://tvfiek3hzi.execute-api.us-east-1.amazonaws.com/dev"
+      STAGE        = local.stage
+    }
+  }
+
+  tags = {
+    Project = local.project_name
+    Stage   = local.stage
+  }
+}
