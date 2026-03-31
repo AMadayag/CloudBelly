@@ -8,7 +8,9 @@ import requests
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-BASE_URL = os.environ.get("API_BASE_URL", "https://tvfiek3hzi.execute-api.us-east-1.amazonaws.com/dev")
+BASE_URL = os.environ.get(
+    "API_BASE_URL", "https://tvfiek3hzi.execute-api.us-east-1.amazonaws.com/dev")
+
 
 def make_test(name, fn):
     """Run a single test function and return a result dict."""
@@ -29,6 +31,7 @@ def get(path, params=None):
     url = f"{BASE_URL}{path}"
     response = requests.get(url, params=params, timeout=10)
     return response
+
 
 def test_events_returns_200():
     r = get("/api/v1/events", params={"suburb": "N/A", "state": "Sydney"})
@@ -66,6 +69,7 @@ def test_datasets_returns_datasets_key():
     body = r.json()
     assert "DataSets" in body, f"Response missing 'DataSets' key: {body}"
 
+
 def test_summary_returns_200():
     r = get("/api/v1/analytics/summary", params={"suburb": "N/A", "state": "Sydney"})
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
@@ -99,6 +103,7 @@ def test_price_trend_response_shape():
     assert "labels" in body, f"Response missing 'labels': {body}"
     assert "datasets" in body, f"Response missing 'datasets': {body}"
 
+
 ALL_TESTS = [
     # Events
     ("GET /events returns 200",               test_events_returns_200),
@@ -120,6 +125,7 @@ ALL_TESTS = [
     ("GET /analytics/price-trend missing suburb 400",   test_price_trend_missing_suburb_returns_400),
     ("GET /analytics/price-trend response shape",       test_price_trend_response_shape),
 ]
+
 
 def lambda_handler(event, context):
     logger.info(json.dumps({"event": "testing_started", "base_url": BASE_URL}))

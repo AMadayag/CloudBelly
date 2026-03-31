@@ -12,6 +12,7 @@ logger.setLevel(logging.INFO)
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['TABLE_NAME'])
 
+
 def lambda_handler(event, context):
     route = event.get("routeKey", "")
     logger.info(json.dumps({"event": "request_received", "route": route}))
@@ -25,15 +26,19 @@ def lambda_handler(event, context):
         return {'statusCode': 404, 'body': json.dumps('Not found')}
 
 # GET /api/v1/analytics/summary
+
+
 def get_summary(event):
     params = event.get("queryStringParameters") or {}
     multi_params = event.get("multiValueQueryStringParameters") or {}
 
     state = params.get("state", "NSW")
-    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+    suburbs = multi_params.get("suburb") or (
+        [params.get("suburb")] if params.get("suburb") else None)
 
     if not suburbs:
-        logger.warning(json.dumps({"event": "validation_error", "route": "summary", "reason": "no suburb provided"}))
+        logger.warning(json.dumps({"event": "validation_error",
+                       "route": "summary", "reason": "no suburb provided"}))
         return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
 
     startDate = params.get("from")
@@ -54,7 +59,8 @@ def get_summary(event):
             location = f"{state}#{suburb}"
             response = get_items(location, startDate, endDate)
             fetched = response.get('Items', [])
-            logger.info(json.dumps({"event": "dynamodb_query", "location": location, "items_returned": len(fetched)}))
+            logger.info(json.dumps({"event": "dynamodb_query",
+                        "location": location, "items_returned": len(fetched)}))
             items.extend(fetched)
 
         # group prices by suburb
@@ -107,15 +113,19 @@ def get_summary(event):
     }
 
 # GET /api/v1/analytics/price-trend
+
+
 def get_price_trend(event):
     params = event.get("queryStringParameters") or {}
     multi_params = event.get("multiValueQueryStringParameters") or {}
 
     state = params.get("state", "NSW")
-    suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
+    suburbs = multi_params.get("suburb") or (
+        [params.get("suburb")] if params.get("suburb") else None)
 
     if not suburbs:
-        logger.warning(json.dumps({"event": "validation_error", "route": "price-trend", "reason": "no suburb provided"}))
+        logger.warning(json.dumps({"event": "validation_error",
+                       "route": "price-trend", "reason": "no suburb provided"}))
         return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
 
     startDate = params.get("from")
@@ -129,7 +139,8 @@ def get_price_trend(event):
             location = f"{state}#{suburb}"
             response = get_items(location, startDate, endDate)
             items = response.get('Items', [])
-            logger.info(json.dumps({"event": "dynamodb_query", "location": location, "items_returned": len(items)}))
+            logger.info(json.dumps({"event": "dynamodb_query",
+                        "location": location, "items_returned": len(items)}))
 
             price_map = {item['date']: item['price'] for item in items}
             suburb_price_maps[suburb] = price_map
@@ -150,10 +161,12 @@ def get_price_trend(event):
             "datasets": datasets
         }
 
-        logger.info(json.dumps({"event": "price_trend_success", "date_points": len(sorted_dates), "suburbs": len(datasets)}))
+        logger.info(json.dumps({"event": "price_trend_success",
+                    "date_points": len(sorted_dates), "suburbs": len(datasets)}))
 
     except ClientError as e:
-        logger.error(json.dumps({"event": "dynamodb_error", "route": "price-trend", "error": str(e)}))
+        logger.error(json.dumps({"event": "dynamodb_error",
+                     "route": "price-trend", "error": str(e)}))
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
@@ -163,11 +176,14 @@ def get_price_trend(event):
     }
 
 # gets items with optional start and end date params
+
+
 def get_items(location, startDate, endDate):
     try:
         if startDate and endDate:
             response = table.query(
-                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').between(startDate, f"{endDate}#zzz")
+                KeyConditionExpression=Key('location').eq(location) & Key(
+                    'eventKey').between(startDate, f"{endDate}#zzz")
             )
         elif startDate:
             response = table.query(
@@ -175,20 +191,24 @@ def get_items(location, startDate, endDate):
             )
         elif endDate:
             response = table.query(
-                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').lte(f"{endDate}#zzz")
+                KeyConditionExpression=Key('location').eq(
+                    location) & Key('eventKey').lte(f"{endDate}#zzz")
             )
         else:
             response = table.query(
                 KeyConditionExpression=Key('location').eq(location)
             )
     except ClientError as e:
-        logger.error(json.dumps({"event": "dynamodb_query_error", "location": location, "error": str(e)}))
+        logger.error(json.dumps({"event": "dynamodb_query_error",
+                     "location": location, "error": str(e)}))
         raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
 
     response['Items'] = [parse_item(i) for i in response.get('Items', [])]
     return response
 
 # flattens nested items
+
+
 def parse_item(item):
     if 'date' in item and 'price' in item and 'suburb' in item:
         return item

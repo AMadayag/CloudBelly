@@ -26,7 +26,7 @@ jobs:
           pip install flake8
 
       - name: Run linter
-        run: flake8 lambda/ tests/ --max-line-length=100
+        run: flake8 lambda/ tests/ --max-line-length=100 --exclude=lambda/testing/package
 
   type-check:
     name: Type Check

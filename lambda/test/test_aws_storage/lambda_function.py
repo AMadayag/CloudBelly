@@ -14,6 +14,7 @@ s3 = boto3.client("s3", region_name=AWS_REGION)
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(DDB_TABLE_NAME)
 
+
 def lambda_handler(event, context):
     now = datetime.now(timezone.utc).isoformat()
     test_id = str(uuid.uuid4())
