@@ -1,6 +1,5 @@
 import sys
 import os
-import json
 import boto3
 import pytest
 from moto import mock_aws
@@ -154,7 +153,7 @@ class TestLambdaHandler:
         with patch(
             "collection.spiders.www_abs_gov_au"
             ".total_value_of_dwellings.TotalValueOfDwellingsScraper"
-            ) as MockScraper:
+        ) as MockScraper:
             mock_instance = MagicMock()
             MockScraper.return_value = mock_instance
             mock_instance.getName.return_value = "total_value_of_dwellings"
