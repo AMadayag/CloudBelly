@@ -1,21 +1,27 @@
 import json
+import logging
 import boto3
 import os
 import statistics
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['TABLE_NAME'])
 
 def lambda_handler(event, context):
     route = event.get("routeKey", "")
+    logger.info(json.dumps({"event": "request_received", "route": route}))
 
     if route == "GET /api/v1/analytics/price-trend":
         return get_price_trend(event)
     elif route == "GET /api/v1/analytics/summary":
         return get_summary(event)
     else:
+        logger.warning(json.dumps({"event": "route_not_found", "route": route}))
         return {'statusCode': 404, 'body': json.dumps('Not found')}
 
 # GET /api/v1/analytics/summary
@@ -27,10 +33,19 @@ def get_summary(event):
     suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
 
     if not suburbs:
+        logger.warning(json.dumps({"event": "validation_error", "route": "summary", "reason": "no suburb provided"}))
         return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
 
     startDate = params.get("from")
     endDate = params.get("to")
+
+    logger.info(json.dumps({
+        "event": "summary_query",
+        "state": state,
+        "suburbs": suburbs,
+        "from": startDate,
+        "to": endDate
+    }))
 
     try:
         items = []
@@ -38,7 +53,9 @@ def get_summary(event):
         for suburb in suburbs:
             location = f"{state}#{suburb}"
             response = get_items(location, startDate, endDate)
-            items.extend(response.get('Items', []))
+            fetched = response.get('Items', [])
+            logger.info(json.dumps({"event": "dynamodb_query", "location": location, "items_returned": len(fetched)}))
+            items.extend(fetched)
 
         # group prices by suburb
         suburb_prices = {}
@@ -77,7 +94,10 @@ def get_summary(event):
             }]
         }
 
+        logger.info(json.dumps({"event": "summary_success", "suburbs_returned": len(labels)}))
+
     except ClientError as e:
+        logger.error(json.dumps({"event": "dynamodb_error", "route": "summary", "error": str(e)}))
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
@@ -95,6 +115,7 @@ def get_price_trend(event):
     suburbs = multi_params.get("suburb") or ([params.get("suburb")] if params.get("suburb") else None)
 
     if not suburbs:
+        logger.warning(json.dumps({"event": "validation_error", "route": "price-trend", "reason": "no suburb provided"}))
         return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
 
     startDate = params.get("from")
@@ -108,6 +129,7 @@ def get_price_trend(event):
             location = f"{state}#{suburb}"
             response = get_items(location, startDate, endDate)
             items = response.get('Items', [])
+            logger.info(json.dumps({"event": "dynamodb_query", "location": location, "items_returned": len(items)}))
 
             price_map = {item['date']: item['price'] for item in items}
             suburb_price_maps[suburb] = price_map
@@ -128,7 +150,10 @@ def get_price_trend(event):
             "datasets": datasets
         }
 
+        logger.info(json.dumps({"event": "price_trend_success", "date_points": len(sorted_dates), "suburbs": len(datasets)}))
+
     except ClientError as e:
+        logger.error(json.dumps({"event": "dynamodb_error", "route": "price-trend", "error": str(e)}))
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
@@ -157,6 +182,7 @@ def get_items(location, startDate, endDate):
                 KeyConditionExpression=Key('location').eq(location)
             )
     except ClientError as e:
+        logger.error(json.dumps({"event": "dynamodb_query_error", "location": location, "error": str(e)}))
         raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
 
     response['Items'] = [parse_item(i) for i in response.get('Items', [])]
