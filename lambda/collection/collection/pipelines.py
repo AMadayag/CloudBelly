@@ -12,6 +12,7 @@ import boto3
 
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
 
+
 class DatasetPipeline:
     def __init__(self, name, domain, bucket):
         self.timestamp = datetime.now().isoformat()
@@ -40,8 +41,9 @@ class DatasetPipeline:
         # file = open(path, "w")
         # json.dump(data, file, indent=2)
         s3Client = boto3.client("s3", region_name=AWS_REGION)
-        s3Client.put_object(Bucket=self.bucket, Key=path, 
-            Body=json.dumps(data).encode("utf-8"), ContentType="application/json")
+        s3Client.put_object(Bucket=self.bucket, Key=path,
+                            Body=json.dumps(data).encode("utf-8"), ContentType="application/json")
+
 
 class TotalValueOfDwellingsPipeline(DatasetPipeline):
     def finish(self):
@@ -57,7 +59,7 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
             "locations": list(set([event['area'] for event in self.getEvents()])),
             "eventCount": len(self.getEvents())
         })
-        
+
         for event in self.getEvents():
             house_event_id = f"evt_{uuid.uuid4()}"
             dwelling_event_id = f"evt_{uuid.uuid4()}"
@@ -72,8 +74,8 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "suburb": "N/A",
                     "price": event['median_price_of_established_house_transfers'],
                     "property": "house",
-            })
-            
+                })
+
             if event['median_price_of_attached_dwelling_transfers']:
                 table.put_item(Item={
                     "location": f"{event['area']}#N/A",
@@ -84,5 +86,4 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "suburb": "N/A",
                     "price": event['median_price_of_attached_dwelling_transfers'],
                     "property": "attached_dwelling"
-            })
-
+                })

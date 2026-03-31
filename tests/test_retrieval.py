@@ -92,10 +92,12 @@ def dynamodb_tables():
 
         yield
 
+
 class TestGetEvents:
     def test_missing_suburb_returns_400(self, dynamodb_tables):
         from handler import lambda_handler
-        response = lambda_handler({"routeKey": "GET /api/v1/events", "queryStringParameters": {}}, None)
+        response = lambda_handler({"routeKey": "GET /api/v1/events",
+                                  "queryStringParameters": {}}, None)
         assert response["statusCode"] == 400
         body = json.loads(response["body"])
         assert "error" in body

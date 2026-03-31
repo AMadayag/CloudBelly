@@ -7,6 +7,7 @@ from collection.spiders.www_abs_gov_au.total_value_of_dwellings import TotalValu
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
 def lambda_handler(event, context):
     bucket = os.environ.get("BUCKET_NAME")
     logger.info(json.dumps({"event": "collection_started", "bucket": bucket}))
@@ -15,7 +16,8 @@ def lambda_handler(event, context):
     pipelines = []
 
     absScraper = TotalValueOfDwellingsScraper()
-    absPipeline = TotalValueOfDwellingsPipeline(absScraper.getName(), absScraper.getDomain(), bucket)
+    absPipeline = TotalValueOfDwellingsPipeline(
+        absScraper.getName(), absScraper.getDomain(), bucket)
     absScraper.setPipeline(absPipeline)
     spiders.append(absScraper)
     pipelines.append(absPipeline)
@@ -27,9 +29,11 @@ def lambda_handler(event, context):
             logger.info(json.dumps({"event": "spider_finished", "spider": spider.getName()}))
 
         for pipeline in pipelines:
-            logger.info(json.dumps({"event": "pipeline_started", "pipeline": pipeline.__class__.__name__}))
+            logger.info(json.dumps({"event": "pipeline_started",
+                        "pipeline": pipeline.__class__.__name__}))
             pipeline.finish()
-            logger.info(json.dumps({"event": "pipeline_finished", "pipeline": pipeline.__class__.__name__}))
+            logger.info(json.dumps({"event": "pipeline_finished",
+                        "pipeline": pipeline.__class__.__name__}))
 
     except Exception as e:
         logger.error(json.dumps({"event": "collection_error", "error": str(e)}))
@@ -45,6 +49,7 @@ def lambda_handler(event, context):
             'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'message': 'Scraper Successful!'})
         }
+
 
 if __name__ == "__main__":
     lambda_handler({}, None)

@@ -58,6 +58,7 @@ def aws_resources():
 
         yield dynamodb
 
+
 class TestDatasetPipeline:
     def test_process_item_appends_to_events(self, aws_resources):
         from collection.pipelines import DatasetPipeline
@@ -76,7 +77,8 @@ class TestDatasetPipeline:
 class TestTotalValueOfDwellingsPipeline:
     def test_finish_writes_to_dynamodb(self, aws_resources):
         from collection.pipelines import TotalValueOfDwellingsPipeline
-        pipeline = TotalValueOfDwellingsPipeline("total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
+        pipeline = TotalValueOfDwellingsPipeline(
+            "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
             "date": "2024-01-01",
             "area": "Sydney",
@@ -93,7 +95,8 @@ class TestTotalValueOfDwellingsPipeline:
 
     def test_finish_skips_null_prices(self, aws_resources):
         from collection.pipelines import TotalValueOfDwellingsPipeline
-        pipeline = TotalValueOfDwellingsPipeline("total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
+        pipeline = TotalValueOfDwellingsPipeline(
+            "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
             "date": "2024-01-01",
             "area": "Sydney",
@@ -110,7 +113,8 @@ class TestTotalValueOfDwellingsPipeline:
 
     def test_finish_writes_dataset_metadata(self, aws_resources):
         from collection.pipelines import TotalValueOfDwellingsPipeline
-        pipeline = TotalValueOfDwellingsPipeline("total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
+        pipeline = TotalValueOfDwellingsPipeline(
+            "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
             "date": "2024-01-01",
             "area": "Sydney",
@@ -128,7 +132,8 @@ class TestTotalValueOfDwellingsPipeline:
 
     def test_location_format(self, aws_resources):
         from collection.pipelines import TotalValueOfDwellingsPipeline
-        pipeline = TotalValueOfDwellingsPipeline("total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
+        pipeline = TotalValueOfDwellingsPipeline(
+            "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
             "date": "2024-01-01",
             "area": "Sydney",

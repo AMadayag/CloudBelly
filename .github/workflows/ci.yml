@@ -40,7 +40,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install type checker
-        run: pip install mypy boto3-stubs
+        run: pip install mypy boto3-stubs types-requests
 
       - name: Run type checker
         run: mypy lambda/ --ignore-missing-imports --explicit-package-bases --exclude lambda/testing/package
