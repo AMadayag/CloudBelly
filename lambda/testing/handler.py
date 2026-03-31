@@ -123,7 +123,7 @@ ALL_TESTS = [
     # Price trend
     ("GET /analytics/price-trend returns 200", test_price_trend_returns_200),
     ("GET /analytics/price-trend missing suburb 400",
-      test_price_trend_missing_suburb_returns_400),
+     test_price_trend_missing_suburb_returns_400),
     ("GET /analytics/price-trend response shape", test_price_trend_response_shape),
 ]
 
