@@ -9,7 +9,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 BASE_URL = os.environ.get(
-    "API_BASE_URL", "https://tvfiek3hzi.execute-api.us-east-1.amazonaws.com/dev")
+    "API_BASE_URL",
+    "https://tvfiek3hzi.execute-api.us-east-1.amazonaws.com/dev",
+)
 
 
 def make_test(name, fn):
@@ -19,10 +21,14 @@ def make_test(name, fn):
         logger.info(json.dumps({"event": "test_passed", "test": name}))
         return {"name": name, "status": "PASS", "error": None}
     except AssertionError as e:
-        logger.warning(json.dumps({"event": "test_failed", "test": name, "error": str(e)}))
+        logger.warning(json.dumps(
+            {"event": "test_failed", "test": name, "error": str(e)}
+        ))
         return {"name": name, "status": "FAIL", "error": str(e)}
     except Exception as e:
-        logger.error(json.dumps({"event": "test_error", "test": name, "error": str(e)}))
+        logger.error(json.dumps(
+            {"event": "test_error", "test": name, "error": str(e)}
+        ))
         return {"name": name, "status": "ERROR", "error": str(e)}
 
 
@@ -46,7 +52,9 @@ def test_events_returns_events_key():
 
 def test_events_missing_suburb_returns_400():
     r = get("/api/v1/events")
-    assert r.status_code == 400, f"Expected 400 when suburb missing, got {r.status_code}"
+    assert r.status_code == 400, (
+        f"Expected 400 when suburb missing, got {r.status_code}"
+    )
 
 
 def test_events_with_date_filter():
@@ -56,7 +64,9 @@ def test_events_with_date_filter():
         "startDate": "2020-01-01",
         "endDate": "2024-12-31"
     })
-    assert r.status_code == 200, f"Expected 200 with date filter, got {r.status_code}"
+    assert r.status_code == 200, (
+        f"Expected 200 with date filter, got {r.status_code}"
+    )
 
 
 def test_datasets_returns_200():
@@ -71,34 +81,50 @@ def test_datasets_returns_datasets_key():
 
 
 def test_summary_returns_200():
-    r = get("/api/v1/analytics/summary", params={"suburb": "N/A", "state": "Sydney"})
+    r = get(
+        "/api/v1/analytics/summary",
+        params={"suburb": "N/A", "state": "Sydney"},
+    )
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
 
 def test_summary_missing_suburb_returns_400():
     r = get("/api/v1/analytics/summary")
-    assert r.status_code == 400, f"Expected 400 when suburb missing, got {r.status_code}"
+    assert r.status_code == 400, (
+        f"Expected 400 when suburb missing, got {r.status_code}"
+    )
 
 
 def test_summary_response_shape():
-    r = get("/api/v1/analytics/summary", params={"suburb": "N/A", "state": "Sydney"})
+    r = get(
+        "/api/v1/analytics/summary",
+        params={"suburb": "N/A", "state": "Sydney"},
+    )
     body = r.json()
     assert "labels" in body, f"Response missing 'labels': {body}"
     assert "datasets" in body, f"Response missing 'datasets': {body}"
 
 
 def test_price_trend_returns_200():
-    r = get("/api/v1/analytics/price-trend", params={"suburb": "N/A", "state": "Sydney"})
+    r = get(
+        "/api/v1/analytics/price-trend",
+        params={"suburb": "N/A", "state": "Sydney"},
+    )
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
 
 def test_price_trend_missing_suburb_returns_400():
     r = get("/api/v1/analytics/price-trend")
-    assert r.status_code == 400, f"Expected 400 when suburb missing, got {r.status_code}"
+    assert r.status_code == 400, (
+        f"Expected 400 when suburb missing, got {r.status_code}"
+    )
 
 
 def test_price_trend_response_shape():
-    r = get("/api/v1/analytics/price-trend", params={"suburb": "N/A", "state": "Sydney"})
+    r = get(
+        "/api/v1/analytics/price-trend",
+        params={"suburb": "N/A", "state": "Sydney"},
+    )
     body = r.json()
     assert "labels" in body, f"Response missing 'labels': {body}"
     assert "datasets" in body, f"Response missing 'datasets': {body}"
@@ -108,7 +134,8 @@ ALL_TESTS = [
     # Events
     ("GET /events returns 200", test_events_returns_200),
     ("GET /events returns events key", test_events_returns_events_key),
-    ("GET /events missing suburb returns 400", test_events_missing_suburb_returns_400),
+    ("GET /events missing suburb returns 400",
+     test_events_missing_suburb_returns_400),
     ("GET /events with date filter", test_events_with_date_filter),
 
     # Datasets
@@ -117,14 +144,17 @@ ALL_TESTS = [
 
     # Summary
     ("GET /analytics/summary returns 200", test_summary_returns_200),
-    ("GET /analytics/summary missing suburb 400", test_summary_missing_suburb_returns_400),
+    ("GET /analytics/summary missing suburb 400",
+     test_summary_missing_suburb_returns_400),
     ("GET /analytics/summary response shape", test_summary_response_shape),
 
     # Price trend
-    ("GET /analytics/price-trend returns 200", test_price_trend_returns_200),
+    ("GET /analytics/price-trend returns 200",
+     test_price_trend_returns_200),
     ("GET /analytics/price-trend missing suburb 400",
      test_price_trend_missing_suburb_returns_400),
-    ("GET /analytics/price-trend response shape", test_price_trend_response_shape),
+    ("GET /analytics/price-trend response shape",
+     test_price_trend_response_shape),
 ]
 
 
