@@ -3,6 +3,8 @@ import re
 import requests
 import pandas as pd
 from lxml import html
+import io
+import re
 from collection.spiders.spider import Spider
 
 
@@ -12,90 +14,68 @@ class TotalValueOfDwellingsScraper(Spider):
 
     def start(self):
         self.log("started")
-        url = (
-            "https://www.abs.gov.au/statistics/economy"
-            "/price-indexes-and-inflation"
-            "/total-value-dwellings/latest-release"
-        )
+        url = "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation"
+        url += "/total-value-dwellings/latest-release"
         self.parse(requests.get(url))
         self.log("Finished")
 
     def parse(self, response):
         self.log("parsing")
-        html_content = html.fromstring(response.content)
-        identifier = (
-            "Median price and number of transfers"
-            " (capital city and rest of state)"
-        )
-        data_xlsx_file = html_content.xpath(
-            f'//div[div/div/h3[contains(text(),"{identifier}")]]//a/@href'
-        )[0]
+        htmlContent = html.fromstring(response.content)
+        identifier = "Median price and number of transfers (capital city and rest of state)"
+        dataXlsxFile = htmlContent.xpath(
+            f'//div[div/div/h3[contains(text(),"{identifier}")]]//a/@href')[0]
 
-        data_xlsx_link = f"https://{self.getDomain()}{data_xlsx_file}"
-        self.log(data_xlsx_link)
+        dataXlsxLink = f"https://{self.getDomain()}{dataXlsxFile}"
+        self.log(dataXlsxLink)
 
-        self.parseDataSheet(requests.get(data_xlsx_link))
+        self.parseDataSheet(requests.get(dataXlsxLink))
 
     def parseDataSheet(self, response):
         self.log("parsing data sheet")
-        data = (
-            pd.read_excel(
-                io.BytesIO(response.content),
-                "Data1",
-                header=None,
-                parse_dates=[0],
-                date_format="%d-$m-$Y"
-            )
-            .replace({float('nan'): None})
-            .T.values.tolist()
-        )
+        data = pd.read_excel(io.BytesIO(response.content), "Data1",
+                             header=None,
+                             parse_dates=[0],
+                             date_format="%d-$m-$Y"
+                             ).replace({float('nan'): None}).T.values.tolist()
 
         dates = [x.split(' ')[0] for x in data[0][10:]]
 
-        median_price_house_transfers = {}
-        for col in [
-            x for x in data[1:]
-            if re.match(r"Median Price of Established House Transfers", x[0])
-        ]:
+        medianPriceHouseTransfers = {}
+        for col in [x for x in data[1:] if
+                    re.match(r"Median Price of Established House Transfers", x[0])]:
             area = col[0].split(';')[-2].strip()
             median_price_house_transfers[area] = [
                 int(x * 1000) if x else x for x in col[10:]
             ]
 
-        median_price_dwell_transfers = {}
-        for col in [
-            x for x in data[1:]
-            if re.match(r"Median Price of Attached Dwelling Transfers", x[0])
-        ]:
+        medianPriceDwellTransfers = {}
+        for col in [x for x in data[1:] if
+                    re.match(r"Median Price of Attached Dwelling Transfers", x[0])]:
             area = col[0].split(';')[-2].strip()
             median_price_dwell_transfers[area] = [
                 int(x * 1000) if x else x for x in col[10:]
             ]
 
-        num_house_transfers = {}
-        for col in [
-            x for x in data[1:]
-            if re.match(r"Number of Established House Transfers", x[0])
-        ]:
+        numHouseTransfers = {}
+        for col in [x for x in data[1:] if
+                    re.match(r"Number of Established House Transfers", x[0])]:
             area = col[0].split(';')[-2].strip()
             num_house_transfers[area] = col[10:]
 
-        num_dwell_transfers = {}
-        for col in [
-            x for x in data[1:]
-            if re.match(r"Number of Attached Dwelling Transfers", x[0])
-        ]:
+        numDwellTransfers = {}
+        for col in [x for x in data[1:] if
+                    re.match(r"Number of Attached Dwelling Transfers", x[0])]:
             area = col[0].split(';')[-2].strip()
-            num_dwell_transfers[area] = col[10:]
+            numDwellTransfers[area] = col[10:]
 
-        for area in num_house_transfers.keys():
+        for area in numHouseTransfers.keys():
             for x in zip(
-                dates,
-                median_price_house_transfers[area],
-                num_house_transfers[area],
-                median_price_dwell_transfers[area],
-                num_dwell_transfers[area]
-            ):
+                    dates,
+                    medianPriceHouseTransfers[area],
+                    numHouseTransfers[area],
+                    medianPriceDwellTransfers[area],
+                    numDwellTransfers[area]):
                 self.pipeline.processItem({
                     "date": x[0],
                     "area": area,

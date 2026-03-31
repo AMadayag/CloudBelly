@@ -1,8 +1,12 @@
 import json
+import logging
 import os
 import boto3
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['TABLE_NAME'])
@@ -12,21 +16,26 @@ datasets_table = boto3.resource('dynamodb').Table(os.environ[
 
 def lambda_handler(event, context):
     route = event.get("routeKey", "")
+    logger.info(json.dumps({"event": "request_received", "route": route}))
 
     if route == "GET /api/v1/events":
         return get_events(event)
     elif route == "GET /api/v1/datasets":
         return get_datasets(event)
     else:
+        logger.warning(json.dumps({"event": "route_not_found", "route": route}))
         return {'statusCode': 404, 'body': json.dumps('Not found')}
 
-
 # GET /api/v1/events
+
+
 def get_events(event):
     params = event.get("queryStringParameters") or {}
     suburb = params.get("suburb")
 
     if not suburb:
+        logger.warning(json.dumps({"event": "validation_error",
+                       "route": "events", "reason": "no suburb provided"}))
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json'},
@@ -39,14 +48,22 @@ def get_events(event):
     min_price = params.get("minPrice")
     max_price = params.get("maxPrice")
 
+    logger.info(json.dumps({
+        "event": "events_query",
+        "suburb": suburb,
+        "state": state,
+        "start_date": start_date,
+        "end_date": end_date,
+        "min_price": min_price,
+        "max_price": max_price
+    }))
+
     try:
         if state:
             location = f"{state}#{suburb}"
             key_condition = Key('location').eq(location)
             if start_date and end_date:
-                key_condition &= Key('eventKey').between(
-                    start_date, f"{end_date}#zzz"
-                )
+                key_condition &= Key('eventKey').between(start_date, f"{end_date}#zzz")
             elif start_date:
                 key_condition &= Key('eventKey').gte(start_date)
             elif end_date:
@@ -54,8 +71,7 @@ def get_events(event):
 
             filter_expr = None
             if min_price and max_price:
-                filter_expr = Attr('price').between(
-                                                int(min_price), int(max_price))
+                filter_expr = Attr('price').between(int(min_price), int(max_price))
             elif min_price:
                 filter_expr = Attr('price').gte(int(min_price))
             elif max_price:
@@ -67,9 +83,13 @@ def get_events(event):
 
             response = table.query(**query_kwargs)
             items = response.get('Items', [])
+            logger.info(json.dumps({"event": "dynamodb_query",
+                        "location": location, "items_returned": len(items)}))
 
         else:
-            # no state provided: scanning all states for the given suburb
+            logger.info(json.dumps(
+                {"event": "full_scan", "reason": "no state provided", "suburb": suburb}))
+            # no state provided : scanning all states for the given suburb
             filter_expr = Attr('suburb').eq(suburb)
             if start_date and end_date:
                 filter_expr &= Attr('date').between(start_date, end_date)
@@ -79,8 +99,7 @@ def get_events(event):
                 filter_expr &= Attr('date').lte(end_date)
 
             if min_price and max_price:
-                filter_expr &= Attr('price').between(
-                                                int(min_price), int(max_price))
+                filter_expr &= Attr('price').between(int(min_price), int(max_price))
             elif min_price:
                 filter_expr &= Attr('price').gte(int(min_price))
             elif max_price:
@@ -88,6 +107,7 @@ def get_events(event):
 
             response = table.scan(FilterExpression=filter_expr)
             items = response.get('Items', [])
+            logger.info(json.dumps({"event": "dynamodb_scan", "items_returned": len(items)}))
 
         events = [
             {
@@ -107,7 +127,9 @@ def get_events(event):
             }
             for item in items
         ]
+        logger.info(json.dumps({"event": "events_success", "events_returned": len(events)}))
     except ClientError as e:
+        logger.error(json.dumps({"event": "dynamodb_error", "route": "events", "error": str(e)}))
         raise RuntimeError(f"[FAIL] DynamoDB query failed - {e}")
 
     return {
@@ -119,14 +141,18 @@ def get_events(event):
 
 # GET /api/v1/datasets
 def get_datasets(_event):
+    logger.info(json.dumps({"event": "datasets_query"}))
     try:
         response = datasets_table.scan()
         datasets = response.get('Items', [])
+        logger.info(json.dumps({"event": "datasets_success", "datasets_returned": len(datasets)}))
     except ClientError as e:
+        logger.error(json.dumps({"event": "dynamodb_error", "route": "datasets", "error": str(e)}))
         raise RuntimeError(f"[FAIL] DynamoDB scan failed - {e}")
 
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json'},
-        'body': json.dumps({"DataSets": datasets}, default=str)
     }
+
+  }

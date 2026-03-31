@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "housing_events" {
-  name = var.table_name
+  name = local.table_name
   billing_mode = "PAY_PER_REQUEST"
 
   hash_key = "location"
@@ -16,14 +16,14 @@ resource "aws_dynamodb_table" "housing_events" {
   }
 
   tags = {
-    Name = var.table_name
-    Project = var.project_name
-    Stage = var.stage
+    Name = local.table_name
+    Project = local.project_name
+    Stage = local.stage
   }
 }
 
 resource "aws_dynamodb_table" "datasets" {
-  name = var.datasets_table_name
+  name = local.datasets_table_name
   billing_mode = "PAY_PER_REQUEST"
 
   hash_key = "datasetId"
@@ -34,8 +34,8 @@ resource "aws_dynamodb_table" "datasets" {
   }
 
   tags = {
-    Name = var.datasets_table_name
-    Project = var.project_name
-    Stage = var.stage
+    Name = local.datasets_table_name
+    Project = local.project_name
+    Stage = local.stage
   }
 }
