@@ -43,7 +43,8 @@ class DatasetPipeline:
         )
         s3Client = boto3.client("s3", region_name=AWS_REGION)
         s3Client.put_object(Bucket=self.bucket, Key=path,
-                            Body=json.dumps(data).encode("utf-8"), ContentType="application/json")
+                            Body=json.dumps(data).encode("utf-8"),
+                            ContentType="application/json")
 
 
 class TotalValueOfDwellingsPipeline(DatasetPipeline):

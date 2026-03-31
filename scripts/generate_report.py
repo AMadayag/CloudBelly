@@ -42,13 +42,24 @@ def generate_pdf(input_path: str, output_path: str) -> None:
     errored = summary.get("errored", 0)
 
     overall = "PASSED" if failed == 0 and errored == 0 else "FAILED"
-    pdf.set_text_color(0, 150, 0) if overall == "PASSED" else pdf.set_text_color(200, 0, 0)
+
+    if overall == "PASSED":
+        pdf.set_text_color(0, 150, 0)
+    else:
+        pdf.set_text_color(200, 0, 0)
+
     pdf.set_font("Helvetica", "B", 13)
     pdf.cell(0, 8, f"Overall: {overall}", ln=True)
     pdf.set_text_color(0, 0, 0)
 
     pdf.set_font("Helvetica", "", 11)
-    pdf.cell(0, 6, f"Total: {total}  |  Passed: {passed}  |  Failed: {failed}  |  Errors: {errored}", ln=True)
+    pdf.cell(
+        0,
+        6,
+        f"Total: {total}  |  Passed: {passed}  |  Failed: {failed}  |  "
+        f"Errors: {errored}",
+        ln=True,
+    )
     pdf.ln(6)
 
     pdf.set_font("Helvetica", "B", 13)

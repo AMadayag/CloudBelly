@@ -91,25 +91,25 @@ class TestParse:
         ):
             with patch.object(
                 scraper,
-                "parseDataSheet",
+                "parse_data_sheet",
             ) as mock_parse_data_sheet:
                 scraper.parse(html_response)
 
         mock_parse_data_sheet.assert_called_once()
 
 
-# parseDataSheet()
-class TestParseDataSheet:
+# parse_data_sheet()
+class Testparse_data_sheet:
     def test_process_item_called_for_each_area_and_date(
         self,
         scraper,
         xlsx_response,
     ):
-        scraper.parseDataSheet(xlsx_response)
+        scraper.parse_data_sheet(xlsx_response)
         assert scraper.pipeline.processItem.call_count == 6
 
     def test_item_has_required_keys(self, scraper, xlsx_response):
-        scraper.parseDataSheet(xlsx_response)
+        scraper.parse_data_sheet(xlsx_response)
         item = scraper.pipeline.processItem.call_args_list[0][0][0]
 
         assert "date" in item
@@ -124,7 +124,7 @@ class TestParseDataSheet:
         scraper,
         xlsx_response,
     ):
-        scraper.parseDataSheet(xlsx_response)
+        scraper.parse_data_sheet(xlsx_response)
         items = [
             call[0][0]
             for call in scraper.pipeline.processItem.call_args_list
@@ -155,7 +155,7 @@ class TestParseDataSheet:
         scraper,
         xlsx_response,
     ):
-        scraper.parseDataSheet(xlsx_response)
+        scraper.parse_data_sheet(xlsx_response)
         items = [
             call[0][0]
             for call in scraper.pipeline.processItem.call_args_list
@@ -166,7 +166,7 @@ class TestParseDataSheet:
         assert "Victoria" in areas
 
     def test_dates_are_strings(self, scraper, xlsx_response):
-        scraper.parseDataSheet(xlsx_response)
+        scraper.parse_data_sheet(xlsx_response)
         items = [
             call[0][0]
             for call in scraper.pipeline.processItem.call_args_list
@@ -227,7 +227,7 @@ class TestParseDataSheet:
         mock_response = MagicMock()
         mock_response.content = buf.read()
 
-        scraper.parseDataSheet(mock_response)
+        scraper.parse_data_sheet(mock_response)
 
         item = scraper.pipeline.processItem.call_args_list[0][0][0]
 
