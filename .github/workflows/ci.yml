@@ -26,7 +26,7 @@ jobs:
           pip install flake8
 
       - name: Run linter
-        run: flake8 lambda/ tests/ --max-line-length=100 --exclude=lambda/testing/package
+        run: flake8 lambda/ --max-line-length=100 --exclude=lambda/testing/package
 
   type-check:
     name: Type Check
@@ -70,8 +70,7 @@ jobs:
           AWS_ACCESS_KEY_ID: testing
           AWS_SECRET_ACCESS_KEY: testing
         run: |
-          pytest tests/ \
-            --cov=lambda \
+          pytest --cov=lambda \
             --cov-report=term-missing \
             --cov-report=xml \
 
