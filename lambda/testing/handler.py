@@ -45,7 +45,9 @@ def test_events_returns_200():
 
 def test_events_missing_suburb_returns_400():
     r = get("/api/v1/events")
-    assert r.status_code == 400, f"Expected 400 when suburb missing, got {r.status_code}"
+    assert r.status_code == 400, (
+        f"Expected 400 when suburb missing, got {r.status_code}"
+    )
 
 
 def test_datasets_returns_200():
@@ -54,12 +56,14 @@ def test_datasets_returns_200():
 
 
 def test_summary_returns_200():
-    r = get("/api/v1/analytics/summary", params={"suburb": "N/A", "state": "Sydney"})
+    r = get("/api/v1/analytics/summary",
+            params={"suburb": "N/A", "state": "Sydney"})
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
 
 def test_price_trend_returns_200():
-    r = get("/api/v1/analytics/price-trend", params={"suburb": "N/A", "state": "Sydney"})
+    r = get("/api/v1/analytics/price-trend",
+            params={"suburb": "N/A", "state": "Sydney"})
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
 
@@ -72,7 +76,8 @@ class TestEvents:
     def test_events_are_list(self):
         r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
         body = r.json()
-        assert isinstance(body["events"], list), f"'events' should be a list, got: {type(body['events'])}"
+        assert isinstance(body["events"], list), (
+            f"'events' should be a list, got: {type(body['events'])}")
 
     def test_date_filter_respects_bounds(self):
         start = "2024-01-01"
@@ -87,7 +92,9 @@ class TestEvents:
         body = r.json()
         for event in body["events"]:
             ts = event["timeObject"]["timestamp"][:10]
-            assert start <= ts <= end, f"Event timestamp {ts} outside [{start}, {end}]"
+            assert start <= ts <= end, (
+                f"Event timestamp {ts} outside [{start}, {end}]"
+            )
 
     def test_event_shape(self):
         r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
@@ -111,7 +118,8 @@ class TestDatasets:
 
 class TestSummary:
     def test_response_shape(self):
-        r = get("/api/v1/analytics/summary", params={"suburb": "N/A", "state": "NSW"})
+        r = get("/api/v1/analytics/summary",
+                params={"suburb": "N/A", "state": "NSW"})
         body = r.json()
         assert "labels" in body and isinstance(body["labels"], list)
         assert "datasets" in body and isinstance(body["datasets"], list)
@@ -119,7 +127,8 @@ class TestSummary:
 
 class TestPriceTrend:
     def test_datasets_have_label_and_data(self):
-        r = get("/api/v1/analytics/price-trend", params={"suburb": "N/A", "state": "NSW"})
+        r = get("/api/v1/analytics/price-trend",
+                params={"suburb": "N/A", "state": "NSW"})
         body = r.json()
         datasets = body.get("datasets", [])
         if not datasets:
@@ -130,18 +139,30 @@ class TestPriceTrend:
 
 
 ALL_TESTS = [
-    ("GET /events returns 200", test_events_returns_200),
-    ("GET /events missing suburb returns 400", test_events_missing_suburb_returns_400),
-    ("GET /datasets returns 200", test_datasets_returns_200),
-    ("GET /analytics/summary returns 200", test_summary_returns_200),
-    ("GET /analytics/price-trend returns 200", test_price_trend_returns_200),
-    ("TestEvents.test_response_has_events_key", TestEvents().test_response_has_events_key),
-    ("TestEvents.test_events_are_list", TestEvents().test_events_are_list),
-    ("TestEvents.test_date_filter_respects_bounds", TestEvents().test_date_filter_respects_bounds),
-    ("TestEvents.test_event_shape", TestEvents().test_event_shape),
-    ("TestDatasets.test_datasets_are_list", TestDatasets().test_datasets_are_list),
-    ("TestSummary.test_response_shape", TestSummary().test_response_shape),
-    ("TestPriceTrend.test_datasets_have_label_and_data", TestPriceTrend().test_datasets_have_label_and_data),
+    ("GET /events returns 200",
+        test_events_returns_200),
+    ("GET /events missing suburb returns 400",
+        test_events_missing_suburb_returns_400),
+    ("GET /datasets returns 200",
+        test_datasets_returns_200),
+    ("GET /analytics/summary returns 200",
+        test_summary_returns_200),
+    ("GET /analytics/price-trend returns 200",
+        test_price_trend_returns_200),
+    ("TestEvents.test_response_has_events_key",
+        TestEvents().test_response_has_events_key),
+    ("TestEvents.test_events_are_list",
+        TestEvents().test_events_are_list),
+    ("TestEvents.test_date_filter_respects_bounds",
+        TestEvents().test_date_filter_respects_bounds),
+    ("TestEvents.test_event_shape",
+        TestEvents().test_event_shape),
+    ("TestDatasets.test_datasets_are_list",
+        TestDatasets().test_datasets_are_list),
+    ("TestSummary.test_response_shape",
+        TestSummary().test_response_shape),
+    ("TestPriceTrend.test_datasets_have_label_and_data",
+        TestPriceTrend().test_datasets_have_label_and_data),
 ]
 
 
@@ -152,13 +173,14 @@ def lambda_handler(event, context):
 
     passed = sum(1 for r in results if r["status"] == "PASS")
     failed = sum(1 for r in results if r["status"] == "FAIL")
-    errored = sum(1 for r in results if r["status"] == "ERROR"]
+    errored = sum(1 for r in results if r["status"] == "ERROR")
     total = len(results)
 
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "base_url": BASE_URL,
-        "summary": {"total": total, "passed": passed, "failed": failed, "errored": errored},
+        "summary": {"total": total, "passed": passed,
+                    "failed": failed, "errored": errored},
         "results": results,
     }
 
