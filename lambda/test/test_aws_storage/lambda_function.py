@@ -42,7 +42,8 @@ def lambda_handler(event, context):
             Body=json.dumps(raw_event).encode("utf-8"),
             ContentType="application/json",
         )
-        print(f"[OK] Uploaded test object to S3: s3://{S3_BUCKET_NAME}/{s3_key}")
+        print(
+            f"[OK] Uploaded test object to S3: s3://{S3_BUCKET_NAME}/{s3_key}")
     except ClientError as e:
         raise ClientError(f"[FAIL] S3 put_object failed - {e}")
 
@@ -87,7 +88,8 @@ def lambda_handler(event, context):
             }
         )
         print("[OK] Read item back from DynamoDB")
-        print("DynamoDB item:", json.dumps(response.get("Item", {}), default=str, indent=2))
+        print("DynamoDB item:", json.dumps(response.get(
+                                        "Item", {}), default=str, indent=2))
     except ClientError as e:
         raise ClientError(f"[FAIL] DynamoDB get_item failed - {e}")
     return {

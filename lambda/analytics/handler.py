@@ -22,8 +22,10 @@ def lambda_handler(event, context):
     elif route == "GET /api/v1/analytics/summary":
         return get_summary(event)
     else:
-        logger.warning(json.dumps({"event": "route_not_found", "route": route}))
+        logger.warning(json.dumps(
+            {"event": "route_not_found", "route": route}))
         return {'statusCode': 404, 'body': json.dumps('Not found')}
+
 
 # GET /api/v1/analytics/summary
 
@@ -39,7 +41,8 @@ def get_summary(event):
     if not suburbs:
         logger.warning(json.dumps({"event": "validation_error",
                        "route": "summary", "reason": "no suburb provided"}))
-        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+        return {'statusCode': 400, 'body': json.dumps(
+                {'error': 'At least one suburb is required'})}
 
     startDate = params.get("from")
     endDate = params.get("to")
@@ -100,10 +103,12 @@ def get_summary(event):
             }]
         }
 
-        logger.info(json.dumps({"event": "summary_success", "suburbs_returned": len(labels)}))
+        logger.info(json.dumps(
+            {"event": "summary_success", "suburbs_returned": len(labels)}))
 
     except ClientError as e:
-        logger.error(json.dumps({"event": "dynamodb_error", "route": "summary", "error": str(e)}))
+        logger.error(json.dumps(
+            {"event": "dynamodb_error", "route": "summary", "error": str(e)}))
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
     return {
@@ -111,6 +116,7 @@ def get_summary(event):
         'headers': {'Content-Type': 'application/json'},
         'body': json.dumps(data, default=str)
     }
+
 
 # GET /api/v1/analytics/price-trend
 
@@ -124,9 +130,11 @@ def get_price_trend(event):
         [params.get("suburb")] if params.get("suburb") else None)
 
     if not suburbs:
-        logger.warning(json.dumps({"event": "validation_error",
-                       "route": "price-trend", "reason": "no suburb provided"}))
-        return {'statusCode': 400, 'body': json.dumps({'error': 'At least one suburb is required'})}
+        logger.warning(json.dumps(
+            {"event": "validation_error", "route": "price-trend",
+                "reason": "no suburb provided"}))
+        return {'statusCode': 400, 'body': json.dumps(
+                {'error': 'At least one suburb is required'})}
 
     startDate = params.get("from")
     endDate = params.get("to")
@@ -161,8 +169,11 @@ def get_price_trend(event):
             "datasets": datasets
         }
 
-        logger.info(json.dumps({"event": "price_trend_success",
-                    "date_points": len(sorted_dates), "suburbs": len(datasets)}))
+        logger.info(json.dumps({
+            "event": "price_trend_success",
+            "date_points": len(sorted_dates),
+            "suburbs": len(datasets)
+        }))
 
     except ClientError as e:
         logger.error(json.dumps({"event": "dynamodb_error",
@@ -174,6 +185,7 @@ def get_price_trend(event):
         'headers': {'Content-Type': 'application/json'},
         'body': json.dumps(data, default=str)
     }
+
 
 # gets items with optional start and end date params
 
@@ -187,7 +199,10 @@ def get_items(location, startDate, endDate):
             )
         elif startDate:
             response = table.query(
-                KeyConditionExpression=Key('location').eq(location) & Key('eventKey').gte(startDate)
+                KeyConditionExpression=(
+                    Key('location').eq(location)
+                    & Key('eventKey').gte(startDate)
+                )
             )
         elif endDate:
             response = table.query(
@@ -205,6 +220,7 @@ def get_items(location, startDate, endDate):
 
     response['Items'] = [parse_item(i) for i in response.get('Items', [])]
     return response
+
 
 # flattens nested items
 

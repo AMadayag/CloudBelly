@@ -24,7 +24,7 @@ from urllib3.util import make_headers, parse_url
 from . import certs
 from .__version__ import __version__
 
-# to_native_string is unused here, but imported here for backwards compatibility
+# to_native_string is unused here, but imported for backwards compatibility
 from ._internal_utils import (  # noqa: F401
     _HEADER_VALIDATORS_BYTE,
     _HEADER_VALIDATORS_STR,
@@ -85,9 +85,13 @@ if sys.platform == "win32":
                 r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
             )
             # ProxyEnable could be REG_SZ or REG_DWORD, normalizing it
-            proxyEnable = int(winreg.QueryValueEx(internetSettings, "ProxyEnable")[0])
+            proxyEnable = int(
+                winreg.QueryValueEx(internetSettings, "ProxyEnable")[0]
+            )
             # ProxyOverride is almost always a string
-            proxyOverride = winreg.QueryValueEx(internetSettings, "ProxyOverride")[0]
+            proxyOverride = winreg.QueryValueEx(
+                internetSettings, "ProxyOverride"
+            )[0]
         except (OSError, ValueError):
             return False
         if not proxyEnable or not proxyOverride:
@@ -144,9 +148,9 @@ def super_len(o):
         try:
             fileno = o.fileno()
         except (io.UnsupportedOperation, AttributeError):
-            # AttributeError is a surprising exception, seeing as how we've just checked
-            # that `hasattr(o, 'fileno')`.  It happens for objects obtained via
-            # `Tarfile.extractfile()`, per issue 5229.
+            # AttributeError is a surprising exception, seeing as how we've
+            # just checked that `hasattr(o, 'fileno')`.  It happens for
+            # objects obtained via `Tarfile.extractfile()`, per issue 5229.
             pass
         else:
             total_length = os.fstat(fileno).st_size
@@ -157,11 +161,11 @@ def super_len(o):
                 warnings.warn(
                     (
                         "Requests has determined the content-length for this "
-                        "request using the binary size of the file: however, the "
-                        "file has been opened in text mode (i.e. without the 'b' "
-                        "flag in the mode). This may lead to an incorrect "
-                        "content-length. In Requests 3.0, support will be removed "
-                        "for files in text mode."
+                        "request using the binary size of the file: however, "
+                        "the file has been opened in text mode (i.e. without "
+                        "the 'b' flag in the mode). This may lead to an "
+                        "incorrect content-length. In Requests 3.0, support "
+                        "will be removed for files in text mode."
                     ),
                     FileModeWarning,
                 )
@@ -243,8 +247,9 @@ def get_netrc_auth(url, raise_errors=False):
                 login_i = 0 if _netrc[0] else 1
                 return (_netrc[login_i], _netrc[2])
         except (NetrcParseError, OSError):
-            # If there was a parsing error or a permissions issue reading the file,
-            # we'll just skip netrc auth unless explicitly asked to raise errors.
+            # If there was a parsing error or a permissions issue reading
+            # the file, we'll just skip netrc auth unless explicitly asked
+            # to raise errors.
             if raise_errors:
                 raise
 
@@ -256,7 +261,8 @@ def get_netrc_auth(url, raise_errors=False):
 def guess_filename(obj):
     """Tries to guess the filename of the given object."""
     name = getattr(obj, "name", None)
-    if name and isinstance(name, basestring) and name[0] != "<" and name[-1] != ">":
+    if (name and isinstance(name, basestring)
+            and name[0] != "<" and name[-1] != ">"):
         return os.path.basename(name)
 
 
@@ -269,14 +275,15 @@ def extract_zipped_paths(path):
         # this is already a valid path, no need to do anything further
         return path
 
-    # find the first valid part of the provided path and treat that as a zip archive
-    # assume the rest of the path is the name of a member in the archive
+    # find the first valid part of the provided path and treat that as a
+    # zip archive; assume the rest of the path is a member in the archive
     archive, member = os.path.split(path)
     while archive and not os.path.exists(archive):
         archive, prefix = os.path.split(archive)
         if not prefix:
-            # If we don't check for an empty prefix after the split (in other words, archive remains unchanged after the split),
-            # we _can_ end up in an infinite loop on a rare corner case affecting a small number of users
+            # If we don't check for an empty prefix after the split (i.e.
+            # archive remains unchanged), we can end up in an infinite loop
+            # on a rare corner case affecting a small number of users
             break
         member = "/".join([prefix, member])
 
@@ -291,7 +298,8 @@ def extract_zipped_paths(path):
     tmp = tempfile.gettempdir()
     extracted_path = os.path.join(tmp, member.split("/")[-1])
     if not os.path.exists(extracted_path):
-        # use read + write to avoid the creating nested folders, we only want the file, avoids mkdir racing condition
+        # use read + write to avoid creating nested folders; we only want
+        # the file itself, avoiding mkdir race conditions
         with atomic_open(extracted_path) as file_handler:
             file_handler.write(zip_file.read(member))
     return extracted_path
@@ -500,7 +508,9 @@ def get_encodings_from_content(content):
     )
 
     charset_re = re.compile(r'<meta.*?charset=["\']*(.+?)["\'>]', flags=re.I)
-    pragma_re = re.compile(r'<meta.*?content=["\']*;?charset=(.+?)["\'>]', flags=re.I)
+    pragma_re = re.compile(
+        r'<meta.*?content=["\']*;?charset=(.+?)["\'>]', flags=re.I
+    )
     xml_re = re.compile(r'^<\?xml.*?encoding=["\']*(.+?)["\'>]')
 
     return (
@@ -530,7 +540,7 @@ def _parse_content_type_header(header):
             index_of_equals = param.find("=")
             if index_of_equals != -1:
                 key = param[:index_of_equals].strip(items_to_strip)
-                value = param[index_of_equals + 1 :].strip(items_to_strip)
+                value = param[index_of_equals + 1:].strip(items_to_strip)
             params_dict[key.lower()] = value
     return content_type, params_dict
 
@@ -556,7 +566,8 @@ def get_encoding_from_headers(headers):
         return "ISO-8859-1"
 
     if "application/json" in content_type:
-        # Assume UTF-8 based on RFC 4627: https://www.ietf.org/rfc/rfc4627.txt since the charset was unset
+        # Assume UTF-8 based on RFC 4627: https://www.ietf.org/rfc/rfc4627.txt
+        # since the charset was unset
         return "utf-8"
 
 
@@ -583,7 +594,7 @@ def iter_slices(string, slice_length):
     if slice_length is None or slice_length <= 0:
         slice_length = len(string)
     while pos < len(string):
-        yield string[pos : pos + slice_length]
+        yield string[pos: pos + slice_length]
         pos += slice_length
 
 
@@ -688,7 +699,9 @@ def address_in_network(ip, net):
     """
     ipaddr = struct.unpack("=L", socket.inet_aton(ip))[0]
     netaddr, bits = net.split("/")
-    netmask = struct.unpack("=L", socket.inet_aton(dotted_netmask(int(bits))))[0]
+    netmask = struct.unpack(
+        "=L", socket.inet_aton(dotted_netmask(int(bits)))
+    )[0]
     network = struct.unpack("=L", socket.inet_aton(netaddr))[0] & netmask
     return (ipaddr & netmask) == (network & netmask)
 
@@ -786,7 +799,9 @@ def should_bypass_proxies(url, no_proxy):
     if no_proxy:
         # We need to check whether we match here. We need to see if we match
         # the end of the hostname, both with and without the port.
-        no_proxy = (host for host in no_proxy.replace(" ", "").split(",") if host)
+        no_proxy = (
+            host for host in no_proxy.replace(" ", "").split(",") if host
+        )
 
         if is_ipv4_address(parsed.hostname):
             for proxy_ip in no_proxy:
@@ -794,8 +809,8 @@ def should_bypass_proxies(url, no_proxy):
                     if address_in_network(parsed.hostname, proxy_ip):
                         return True
                 elif parsed.hostname == proxy_ip:
-                    # If no_proxy ip was defined in plain IP notation instead of cidr notation &
-                    # matches the IP of the index
+                    # If no_proxy ip was defined in plain IP notation instead
+                    # of cidr notation & matches the IP of the index
                     return True
         else:
             host_with_port = parsed.hostname
@@ -803,9 +818,10 @@ def should_bypass_proxies(url, no_proxy):
                 host_with_port += f":{parsed.port}"
 
             for host in no_proxy:
-                if parsed.hostname.endswith(host) or host_with_port.endswith(host):
-                    # The URL does match something in no_proxy, so we don't want
-                    # to apply the proxies on this URL.
+                if (parsed.hostname.endswith(host)
+                        or host_with_port.endswith(host)):
+                    # The URL does match something in no_proxy, so we don't
+                    # want to apply the proxies on this URL.
                     return True
 
     with set_environ("no_proxy", no_proxy_arg):
@@ -912,7 +928,8 @@ def default_headers():
 def parse_header_links(value):
     """Return a list of parsed link headers proxies.
 
-    i.e. Link: <http:/.../front.jpeg>; rel=front; type="image/jpeg",<http://.../back.jpeg>; rel=back;type="image/jpeg"
+    i.e. Link: <http:/.../front.jpeg>; rel=front; type="image/jpeg",
+    <http://.../back.jpeg>; rel=back;type="image/jpeg"
 
     :rtype: list
     """
@@ -1091,4 +1108,6 @@ def rewind_body(prepared_request):
                 "An error occurred when rewinding request body for redirect."
             )
     else:
-        raise UnrewindableBodyError("Unable to rewind request body for redirect.")
+        raise UnrewindableBodyError(
+            "Unable to rewind request body for redirect."
+        )

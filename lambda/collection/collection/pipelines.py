@@ -37,12 +37,14 @@ class DatasetPipeline:
             }
         }
 
-        path = f"scraped/{self.crawlerDomain}/{self.crawlerName}_{self.timestamp}.json"
-        # file = open(path, "w")
-        # json.dump(data, file, indent=2)
+        path = (
+            f"scraped/{self.crawlerDomain}"
+            f"/{self.crawlerName}_{self.timestamp}.json"
+        )
         s3Client = boto3.client("s3", region_name=AWS_REGION)
         s3Client.put_object(Bucket=self.bucket, Key=path,
-                            Body=json.dumps(data).encode("utf-8"), ContentType="application/json")
+                            Body=json.dumps(data).encode("utf-8"),
+                            ContentType="application/json")
 
 
 class TotalValueOfDwellingsPipeline(DatasetPipeline):
@@ -56,7 +58,9 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
             "datasetId": f"ds_{str(uuid.uuid4())}",
             "name": "ABS Total Value of Dwellings",
             "datasource": self.crawlerDomain,
-            "locations": list(set([event['area'] for event in self.getEvents()])),
+            "locations": list(set(
+                [event['area'] for event in self.getEvents()]
+            )),
             "eventCount": len(self.getEvents())
         })
 
@@ -72,7 +76,8 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "date": event['date'],
                     "state": event['area'],
                     "suburb": "N/A",
-                    "price": event['median_price_of_established_house_transfers'],
+                    "price": event[
+                                'median_price_of_established_house_transfers'],
                     "property": "house",
                 })
 
@@ -84,6 +89,7 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
                     "date": event['date'],
                     "state": event['area'],
                     "suburb": "N/A",
-                    "price": event['median_price_of_attached_dwelling_transfers'],
+                    "price": event[
+                                'median_price_of_attached_dwelling_transfers'],
                     "property": "attached_dwelling"
                 })
