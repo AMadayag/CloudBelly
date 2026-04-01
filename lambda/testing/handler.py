@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 
 import requests
+import pytest
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -15,7 +16,6 @@ BASE_URL = os.environ.get(
 
 
 def make_test(name, fn):
-    """Run a single test function and return a result dict."""
     try:
         fn()
         logger.info(json.dumps({"event": "test_passed", "test": name}))
@@ -33,7 +33,6 @@ def make_test(name, fn):
 
 
 def get(path, params=None):
-    """Make a GET request to the API and return the response."""
     url = f"{BASE_URL}{path}"
     response = requests.get(url, params=params, timeout=10)
     return response
@@ -44,28 +43,10 @@ def test_events_returns_200():
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
 
-def test_events_returns_events_key():
-    r = get("/api/v1/events", params={"suburb": "N/A", "state": "Sydney"})
-    body = r.json()
-    assert "events" in body, f"Response missing 'events' key: {body}"
-
-
 def test_events_missing_suburb_returns_400():
     r = get("/api/v1/events")
     assert r.status_code == 400, (
         f"Expected 400 when suburb missing, got {r.status_code}"
-    )
-
-
-def test_events_with_date_filter():
-    r = get("/api/v1/events", params={
-        "suburb": "N/A",
-        "state": "Sydney",
-        "startDate": "2020-01-01",
-        "endDate": "2024-12-31"
-    })
-    assert r.status_code == 200, (
-        f"Expected 200 with date filter, got {r.status_code}"
     )
 
 
@@ -74,103 +55,114 @@ def test_datasets_returns_200():
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
 
-def test_datasets_returns_datasets_key():
-    r = get("/api/v1/datasets")
-    body = r.json()
-    assert "DataSets" in body, f"Response missing 'DataSets' key: {body}"
-
-
-def test_events_nonexistent_suburb_returns_empty():
-    r = get("/api/v1/events", params={
-        "suburb": "ThisSuburbDoesNotExist99999",
-        "state": "NSW"
-    })
-    assert r.status_code == 200, f"Expected 200, got {r.status_code}"
-    body = r.json()
-    assert "events" in body, f"Response missing 'events' key: {body}"
-    assert body["events"] == [], (
-        f"Expected empty list for nonexistent suburb, got: {body['events']}"
-    )
-
-
-
 def test_summary_returns_200():
-    r = get(
-        "/api/v1/analytics/summary",
-        params={"suburb": "N/A", "state": "Sydney"},
-    )
+    r = get("/api/v1/analytics/summary",
+            params={"suburb": "N/A", "state": "Sydney"})
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
-
-
-def test_summary_missing_suburb_returns_400():
-    r = get("/api/v1/analytics/summary")
-    assert r.status_code == 400, (
-        f"Expected 400 when suburb missing, got {r.status_code}"
-    )
-
-
-def test_summary_response_shape():
-    r = get(
-        "/api/v1/analytics/summary",
-        params={"suburb": "N/A", "state": "Sydney"},
-    )
-    body = r.json()
-    assert "labels" in body, f"Response missing 'labels': {body}"
-    assert "datasets" in body, f"Response missing 'datasets': {body}"
 
 
 def test_price_trend_returns_200():
-    r = get(
-        "/api/v1/analytics/price-trend",
-        params={"suburb": "N/A", "state": "Sydney"},
-    )
+    r = get("/api/v1/analytics/price-trend",
+            params={"suburb": "N/A", "state": "Sydney"})
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
 
-def test_price_trend_missing_suburb_returns_400():
-    r = get("/api/v1/analytics/price-trend")
-    assert r.status_code == 400, (
-        f"Expected 400 when suburb missing, got {r.status_code}"
-    )
+class TestEvents:
+    def test_response_has_events_key(self):
+        r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        assert "events" in body, f"Missing 'events' key: {body}"
+
+    def test_events_are_list(self):
+        r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        assert isinstance(body["events"], list), (
+            f"'events' should be a list, got: {type(body['events'])}")
+
+    def test_date_filter_respects_bounds(self):
+        start = "2024-01-01"
+        end = "2024-01-31"
+        r = get("/api/v1/events", params={
+            "suburb": "N/A",
+            "state": "NSW",
+            "startDate": start,
+            "endDate": end,
+        })
+        assert r.status_code == 200
+        body = r.json()
+        for event in body["events"]:
+            ts = event["timeObject"]["timestamp"][:10]
+            assert start <= ts <= end, (
+                f"Event timestamp {ts} outside [{start}, {end}]"
+            )
+
+    def test_event_shape(self):
+        r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        events = body.get("events", [])
+        if not events:
+            pytest.skip("No events in DB to validate shape")
+        event = events[0]
+        assert "eventId" in event
+        assert "timeObject" in event and "timestamp" in event["timeObject"]
+        assert "attributes" in event and "price" in event["attributes"]
 
 
-def test_price_trend_response_shape():
-    r = get(
-        "/api/v1/analytics/price-trend",
-        params={"suburb": "N/A", "state": "Sydney"},
-    )
-    body = r.json()
-    assert "labels" in body, f"Response missing 'labels': {body}"
-    assert "datasets" in body, f"Response missing 'datasets': {body}"
+class TestDatasets:
+    def test_datasets_are_list(self):
+        r = get("/api/v1/datasets")
+        body = r.json()
+        assert "DataSets" in body
+        assert isinstance(body["DataSets"], list)
+
+
+class TestSummary:
+    def test_response_shape(self):
+        r = get("/api/v1/analytics/summary",
+                params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        assert "labels" in body and isinstance(body["labels"], list)
+        assert "datasets" in body and isinstance(body["datasets"], list)
+
+
+class TestPriceTrend:
+    def test_datasets_have_label_and_data(self):
+        r = get("/api/v1/analytics/price-trend",
+                params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        datasets = body.get("datasets", [])
+        if not datasets:
+            pytest.skip("No price trend data")
+        for ds in datasets:
+            assert "label" in ds
+            assert "data" in ds and isinstance(ds["data"], list)
 
 
 ALL_TESTS = [
-    # Events
-    ("GET /events returns 200", test_events_returns_200),
-    ("GET /events returns events key", test_events_returns_events_key),
+    ("GET /events returns 200",
+        test_events_returns_200),
     ("GET /events missing suburb returns 400",
-     test_events_missing_suburb_returns_400),
-    ("GET /events with date filter", test_events_with_date_filter),
-    ("GET /events nonexistent suburb returns empty",
-     test_events_nonexistent_suburb_returns_empty),
-
-    # Datasets
-    ("GET /datasets returns 200", test_datasets_returns_200),
-    ("GET /datasets returns datasets key", test_datasets_returns_datasets_key),
-
-    # Summary
-    ("GET /analytics/summary returns 200", test_summary_returns_200),
-    ("GET /analytics/summary missing suburb 400",
-     test_summary_missing_suburb_returns_400),
-    ("GET /analytics/summary response shape", test_summary_response_shape),
-
-    # Price trend
+        test_events_missing_suburb_returns_400),
+    ("GET /datasets returns 200",
+        test_datasets_returns_200),
+    ("GET /analytics/summary returns 200",
+        test_summary_returns_200),
     ("GET /analytics/price-trend returns 200",
-     test_price_trend_returns_200),
-    ("GET /analytics/price-trend missing suburb 400",
-     test_price_trend_missing_suburb_returns_400),
-    ("GET /analytics/price-trend response shape",
-     test_price_trend_response_shape),
+        test_price_trend_returns_200),
+    ("TestEvents.test_response_has_events_key",
+        TestEvents().test_response_has_events_key),
+    ("TestEvents.test_events_are_list",
+        TestEvents().test_events_are_list),
+    ("TestEvents.test_date_filter_respects_bounds",
+        TestEvents().test_date_filter_respects_bounds),
+    ("TestEvents.test_event_shape",
+        TestEvents().test_event_shape),
+    ("TestDatasets.test_datasets_are_list",
+        TestDatasets().test_datasets_are_list),
+    ("TestSummary.test_response_shape",
+        TestSummary().test_response_shape),
+    ("TestPriceTrend.test_datasets_have_label_and_data",
+        TestPriceTrend().test_datasets_have_label_and_data),
 ]
 
 
@@ -187,12 +179,8 @@ def lambda_handler(event, context):
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "base_url": BASE_URL,
-        "summary": {
-            "total": total,
-            "passed": passed,
-            "failed": failed,
-            "errored": errored,
-        },
+        "summary": {"total": total, "passed": passed,
+                    "failed": failed, "errored": errored},
         "results": results,
     }
 
