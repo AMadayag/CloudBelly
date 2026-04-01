@@ -166,7 +166,7 @@ def get_price_trend(event):
             })
 
         data = {
-            "labels": state,
+            "labels": sorted_dates,
             "datasets": datasets
         }
 

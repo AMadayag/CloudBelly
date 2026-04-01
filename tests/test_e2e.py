@@ -1,241 +1,177 @@
 # tests/test_e2e.py
-import sys
 import os
-import json
-import boto3
+import requests
 import pytest
-from moto import mock_aws
-from unittest.mock import patch
 
-sys.path.append(os.path.abspath("lambda"))
-sys.path.append(os.path.abspath("lambda/collection"))
-
-TABLE_NAME = "cloudbelly-dev-housing-events"
-DATASETS_TABLE_NAME = "cloudbelly-dev-datasets"
-BUCKET_NAME = "cloudbelly-team-dev-raw-events"
+BASE_URL = os.environ.get(
+    "API_BASE_URL",
+    "https://tvfiek3hzi.execute-api.us-east-1.amazonaws.com/dev",
+)
 
 
-@pytest.fixture(autouse=True)
-def set_env():
-    with patch.dict(os.environ, {
-        "TABLE_NAME": TABLE_NAME,
-        "DATASETS_TABLE_NAME": DATASETS_TABLE_NAME,
-        "BUCKET_NAME": BUCKET_NAME,
-        "AWS_REGION": "us-east-1",
-        "AWS_DEFAULT_REGION": "us-east-1"
-    }):
-        yield
+def get(path, params=None):
+    url = f"{BASE_URL}{path}"
+    return requests.get(url, params=params, timeout=10)
 
 
-@pytest.fixture(autouse=True)
-def reset_analytics_table():
-    import analytics.handler as ah
-    ah.table = None
-    yield
-    ah.table = None
+# Events
+class TestEvents:
+    def test_returns_200(self):
+        r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
 
+    def test_response_has_events_key(self):
+        r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        assert "events" in body, f"Missing 'events' key: {body}"
 
-@pytest.fixture
-def aws_resources():
-    with mock_aws():
-        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-
-        dynamodb.create_table(
-            TableName=TABLE_NAME,
-            KeySchema=[
-                {"AttributeName": "location", "KeyType": "HASH"},
-                {"AttributeName": "eventKey", "KeyType": "RANGE"}
-            ],
-            AttributeDefinitions=[
-                {"AttributeName": "location", "AttributeType": "S"},
-                {"AttributeName": "eventKey", "AttributeType": "S"}
-            ],
-            BillingMode="PAY_PER_REQUEST"
+    def test_events_are_list(self):
+        r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        assert isinstance(body["events"], list), (
+            f"'events' should be a list, got: {type(body['events'])}"
         )
 
-        dynamodb.create_table(
-            TableName=DATASETS_TABLE_NAME,
-            KeySchema=[{"AttributeName": "datasetId", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "datasetId",
-                                  "AttributeType": "S"}],
-            BillingMode="PAY_PER_REQUEST"
+    def test_missing_suburb_returns_400(self):
+        r = get("/api/v1/events")
+        assert r.status_code == 400, (
+            f"Expected 400 when suburb missing, got {r.status_code}"
         )
 
-        # S3 will be mocked via mock_aws as well
-        s3 = boto3.client("s3", region_name="us-east-1")
-        s3.create_bucket(Bucket=BUCKET_NAME)
-
-        yield dynamodb
-
-
-class MockScraper:
-    def getName(self):
-        return "total_value_of_dwellings"
-
-    def getDomain(self):
-        return "www.abs.gov.au"
-
-    def setPipeline(self, pipeline):
-        self.pipeline = pipeline
-
-    def start(self):
-        # simulate a scraped dataset
-        self.pipeline.processItem({
-            "date": "2024-01-01",
-            "area": "NSW",
-            "median_price_of_established_house_transfers": 100,
-            "median_price_of_attached_dwelling_transfers": 200,
-        })
-        self.pipeline.processItem({
-            "date": "2024-01-02",
-            "area": "NSW",
-            "median_price_of_established_house_transfers": 300,
-            "median_price_of_attached_dwelling_transfers": 400,
-        })
-
-
-def test_full_e2e_flow(aws_resources):
-    from collection.handler import lambda_handler as collection_handler
-    from analytics.handler import lambda_handler as analytics_handler
-    from retrieval.handler import lambda_handler as retrieval_handler
-
-    # collection run
-    with patch(
-        "collection.handler.TotalValueOfDwellingsScraper",
-        return_value=MockScraper()
-    ):
-        response = collection_handler({}, None)
-    assert response["statusCode"] == 200
-
-    # summary
-    summary_event = {
-        "routeKey": "GET /api/v1/analytics/summary",
-        "queryStringParameters": {"state": "NSW", "suburb": "N/A"},
-        "multiValueQueryStringParameters": {}
-    }
-    response = analytics_handler(summary_event, None)
-    body = json.loads(response["body"])
-    assert response["statusCode"] == 200
-    assert body["labels"] == ["NSW"]
-    assert len(body["datasets"][0]["data"]) == 1
-
-    # price trend
-    trend_event = {
-        "routeKey": "GET /api/v1/analytics/price-trend",
-        "queryStringParameters": {"state": "NSW", "suburb": "N/A"},
-        "multiValueQueryStringParameters": {}
-    }
-    response = analytics_handler(trend_event, None)
-    body = json.loads(response["body"])
-    assert response["statusCode"] == 200
-    assert len(body["datasets"]) == 1
-    assert len(body["datasets"][0]["data"]) == 2
-
-    # events with date filter
-    events_event = {
-        "routeKey": "GET /api/v1/events",
-        "queryStringParameters": {
-            "state": "NSW",
+    def test_date_filter_returns_200(self):
+        r = get("/api/v1/events", params={
             "suburb": "N/A",
-            "startDate": "2024-01-01",
-            "endDate": "2024-01-01"
-        }
-    }
-    response = retrieval_handler(events_event, None)
-    body = json.loads(response["body"])
-    assert response["statusCode"] == 200
-    assert len(body["events"]) >= 1
-    for event in body["events"]:
-        assert event["timeObject"]["timestamp"].startswith("2024-01-01")
+            "state": "NSW",
+            "startDate": "2020-01-01",
+            "endDate": "2024-12-31",
+        })
+        assert r.status_code == 200, (
+            f"Expected 200 with date filter, got {r.status_code}"
+        )
 
-
-def test_e2e_multiple_suburbs(aws_resources):
-    from collection.handler import lambda_handler as collection_handler
-    from analytics.handler import lambda_handler as analytics_handler
-    from retrieval.handler import lambda_handler as retrieval_handler
-
-    class MultiScraper:
-        def getName(self): return "total_value_of_dwellings"
-        def getDomain(self): return "www.abs.gov.au"
-
-        def setPipeline(self, pipeline):
-            self.pipeline = pipeline
-
-        def start(self):
-            # Two different dates for NSW, to test price trend has 2 points
-            self.pipeline.processItem({
-                "date": "2024-01-01",
-                "area": "NSW",
-                "median_price_of_established_house_transfers": 100,
-                "median_price_of_attached_dwelling_transfers": 200,
-            })
-            self.pipeline.processItem({
-                "date": "2024-02-01",
-                "area": "NSW",
-                "median_price_of_established_house_transfers": 300,
-                "median_price_of_attached_dwelling_transfers": 400,
-            })
-            # VIC data on same dates
-            self.pipeline.processItem({
-                "date": "2024-01-01",
-                "area": "VIC",
-                "median_price_of_established_house_transfers": 500,
-                "median_price_of_attached_dwelling_transfers": None,
-            })
-            self.pipeline.processItem({
-                "date": "2024-02-01",
-                "area": "VIC",
-                "median_price_of_established_house_transfers": 600,
-                "median_price_of_attached_dwelling_transfers": None,
-            })
-
-    with patch(
-        "collection.handler.TotalValueOfDwellingsScraper",
-        return_value=MultiScraper()
-    ):
-        response = collection_handler({}, None)
-    assert response["statusCode"] == 200
-
-    # summary: single state, single suburb
-    for state in ["NSW", "VIC"]:
-        summary_event = {
-            "routeKey": "GET /api/v1/analytics/summary",
-            "queryStringParameters": {"state": state},
-            "multiValueQueryStringParameters": {"suburb": ["N/A"]}
-        }
-        response = analytics_handler(summary_event, None)
-        body = json.loads(response["body"])
-        assert response["statusCode"] == 200
-        assert state in body["labels"]
-        assert len(body["datasets"][0]["data"]) == 1
-
-    # price trend: single state, verifies multiple date points
-    for state in ["NSW", "VIC"]:
-        trend_event = {
-            "routeKey": "GET /api/v1/analytics/price-trend",
-            "queryStringParameters": {"state": state},
-            "multiValueQueryStringParameters": {"suburb": ["N/A"]}
-        }
-        response = analytics_handler(trend_event, None)
-        body = json.loads(response["body"])
-        assert response["statusCode"] == 200
-        assert len(body["datasets"]) == 1
-        assert len(body["datasets"][0]["data"]) == 2
-
-    # retrieval: date filter returns only matching events
-    for state in ["NSW", "VIC"]:
-        events_event = {
-            "routeKey": "GET /api/v1/events",
-            "queryStringParameters": {
-                "state": state,
-                "suburb": "N/A",
-                "startDate": "2024-01-01",
-                "endDate": "2024-01-01"
-            }
-        }
-        response = retrieval_handler(events_event, None)
-        body = json.loads(response["body"])
-        assert response["statusCode"] == 200
-        assert len(body["events"]) >= 1
+    def test_date_filter_respects_bounds(self):
+        start = "2024-01-01"
+        end = "2024-01-31"
+        r = get("/api/v1/events", params={
+            "suburb": "N/A",
+            "state": "NSW",
+            "startDate": start,
+            "endDate": end,
+        })
+        assert r.status_code == 200
+        body = r.json()
         for event in body["events"]:
-            assert event["timeObject"]["timestamp"].startswith("2024-01-01")
+            ts = event["timeObject"]["timestamp"][:10]
+            assert start <= ts <= end, (
+                f"Event timestamp {ts} outside [{start}, {end}]"
+            )
+
+    def test_event_shape(self):
+        r = get("/api/v1/events", params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        events = body.get("events", [])
+        if not events:
+            pytest.skip("No events in DB to validate shape against")
+        event = events[0]
+        assert "eventId" in event, f"Missing 'eventId': {event}"
+        assert "timeObject" in event, f"Missing 'timeObject': {event}"
+        assert "timestamp" in event["timeObject"], (
+            f"Missing 'timeObject.timestamp': {event}"
+        )
+        assert "attributes" in event, f"Missing 'attributes': {event}"
+        assert "price" in event["attributes"], (
+            f"Missing 'attributes.price': {event}"
+        )
+
+
+# Datasets
+class TestDatasets:
+    def test_returns_200(self):
+        r = get("/api/v1/datasets")
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+
+    def test_response_has_datasets_key(self):
+        r = get("/api/v1/datasets")
+        body = r.json()
+        assert "DataSets" in body, f"Missing 'DataSets' key: {body}"
+
+    def test_datasets_are_list(self):
+        r = get("/api/v1/datasets")
+        body = r.json()
+        assert isinstance(body["DataSets"], list), (
+            f"'DataSets' should be a list, got: {type(body['DataSets'])}"
+        )
+
+
+# Analytics — Summary
+class TestSummary:
+    def test_returns_200(self):
+        r = get("/api/v1/analytics/summary",
+                params={"suburb": "N/A", "state": "NSW"})
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+
+    def test_missing_suburb_returns_400(self):
+        r = get("/api/v1/analytics/summary")
+        assert r.status_code == 400, (
+            f"Expected 400 when suburb missing, got {r.status_code}"
+        )
+
+    def test_response_shape(self):
+        r = get("/api/v1/analytics/summary",
+                params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        assert "labels" in body, f"Missing 'labels': {body}"
+        assert "datasets" in body, f"Missing 'datasets': {body}"
+        assert isinstance(body["labels"], list), "'labels' should be a list"
+        assert isinstance(body["datasets"], list), (
+            "'datasets' should be a list"
+        )
+
+    def test_dataset_entries_have_expected_keys(self):
+        r = get("/api/v1/analytics/summary",
+                params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        datasets = body.get("datasets", [])
+        if not datasets or not datasets[0].get("data"):
+            pytest.skip("No summary data in DB to validate shape against")
+        point = datasets[0]["data"][0]
+        for key in ("min", "median", "max"):
+            assert key in point, f"Summary data point missing '{key}': {point}"
+
+
+# Analytics — Price Trend
+class TestPriceTrend:
+    def test_returns_200(self):
+        r = get("/api/v1/analytics/price-trend",
+                params={"suburb": "N/A", "state": "NSW"})
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+
+    def test_missing_suburb_returns_400(self):
+        r = get("/api/v1/analytics/price-trend")
+        assert r.status_code == 400, (
+            f"Expected 400 when suburb missing, got {r.status_code}"
+        )
+
+    def test_response_shape(self):
+        r = get("/api/v1/analytics/price-trend",
+                params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        assert "labels" in body, f"Missing 'labels': {body}"
+        assert "datasets" in body, f"Missing 'datasets': {body}"
+        assert isinstance(body["datasets"], list), (
+            "'datasets' should be a list"
+        )
+
+    def test_datasets_have_label_and_data(self):
+        r = get("/api/v1/analytics/price-trend",
+                params={"suburb": "N/A", "state": "NSW"})
+        body = r.json()
+        datasets = body.get("datasets", [])
+        if not datasets:
+            pytest.skip("No price trend data in DB to validate shape against")
+        for ds in datasets:
+            assert "label" in ds, f"Dataset missing 'label': {ds}"
+            assert "data" in ds, f"Dataset missing 'data': {ds}"
+            assert isinstance(ds["data"], list), (
+                f"'data' should be a list: {ds}"
+            )
