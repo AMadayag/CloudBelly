@@ -28,8 +28,6 @@ def lambda_handler(event, context):
 
 
 # GET /api/v1/analytics/summary
-
-
 def get_summary(event):
     params = event.get("queryStringParameters") or {}
     multi_params = event.get("multiValueQueryStringParameters") or {}
@@ -119,8 +117,6 @@ def get_summary(event):
 
 
 # GET /api/v1/analytics/price-trend
-
-
 def get_price_trend(event):
     params = event.get("queryStringParameters") or {}
     multi_params = event.get("multiValueQueryStringParameters") or {}
@@ -188,8 +184,6 @@ def get_price_trend(event):
 
 
 # gets items with optional start and end date params
-
-
 def get_items(location, startDate, endDate):
     try:
         if startDate and endDate:
@@ -223,8 +217,6 @@ def get_items(location, startDate, endDate):
 
 
 # flattens nested items
-
-
 def parse_item(item):
     if 'date' in item and 'price' in item and 'suburb' in item:
         return item
