@@ -1,7 +1,0 @@
-https://www.inthesuburbs.com.au/suburb/north-sydney-nsw-2060.html - html
-https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release - excel	
-https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/residential-property-price-indexes-eight-capital-cities/dec-2021 -excel
-https://tradingeconomics.com/australia/indicators - html - Have to pay for historical data
-https://www.abs.gov.au/statistics - A lot of useful data
-https://www.ljhooker.com.au/residential-search-results?orderBy=date-desc&searchOrigin=residential-au&searchProfile=buy - Try to scrape listings directly from agents
-https://www.abs.gov.au/methodologies/data-region-methodology/2011-25#data-downloads - Has some suburb data 
