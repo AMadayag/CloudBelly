@@ -3,7 +3,7 @@ import os
 import boto3
 import pytest
 from moto import mock_aws
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 sys.path.append(os.path.abspath("lambda"))
 
@@ -78,7 +78,9 @@ class TestDatasetPipeline:
 
 class TestTotalValueOfDwellingsPipeline:
     def test_finish_writes_to_dynamodb(self, aws_resources):
-        from collection.collection.pipelines import TotalValueOfDwellingsPipeline
+        from collection.collection.pipelines import (
+            TotalValueOfDwellingsPipeline
+        )
         pipeline = TotalValueOfDwellingsPipeline(
                     "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
@@ -96,7 +98,9 @@ class TestTotalValueOfDwellingsPipeline:
         assert result["Count"] >= 1
 
     def test_finish_skips_null_prices(self, aws_resources):
-        from collection.collection.pipelines import TotalValueOfDwellingsPipeline
+        from collection.collection.pipelines import (
+            TotalValueOfDwellingsPipeline
+        )
         pipeline = TotalValueOfDwellingsPipeline(
                     "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
@@ -114,7 +118,9 @@ class TestTotalValueOfDwellingsPipeline:
         assert result["Count"] == 0
 
     def test_finish_writes_dataset_metadata(self, aws_resources):
-        from collection.collection.pipelines import TotalValueOfDwellingsPipeline
+        from collection.collection.pipelines import (
+            TotalValueOfDwellingsPipeline
+        )
         pipeline = TotalValueOfDwellingsPipeline(
                     "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
@@ -133,7 +139,9 @@ class TestTotalValueOfDwellingsPipeline:
         assert result["Items"][0]["datasource"] == "www.abs.gov.au"
 
     def test_location_format(self, aws_resources):
-        from collection.collection.pipelines import TotalValueOfDwellingsPipeline
+        from collection.collection.pipelines import (
+            TotalValueOfDwellingsPipeline
+        )
         pipeline = TotalValueOfDwellingsPipeline(
                     "total_value_of_dwellings", "www.abs.gov.au", BUCKET_NAME)
         pipeline.processItem({
@@ -149,20 +157,3 @@ class TestTotalValueOfDwellingsPipeline:
         table = aws_resources.Table(TABLE_NAME)
         result = table.scan()
         assert result["Items"][0]["location"] == "Sydney#N/A"
-
-
-# class TestLambdaHandler:
-#     def test_handler_returns_200_on_success(self, aws_resources):
-#         with patch(
-#             "collection.collection.total_value_of_dwellings."
-#             "TotalValueOfDwellingsScraper"
-#         ) as MockScraper:
-#             mock_instance = MagicMock()
-#             MockScraper.return_value = mock_instance
-#             mock_instance.getName.return_value = "total_value_of_dwellings"
-#             mock_instance.getDomain.return_value = "www.abs.gov.au"
-#             mock_instance.start.return_value = None
-
-#             from collection.collection.handler import lambda_handler
-#             response = lambda_handler({}, None)
-#             assert response["statusCode"] == 200

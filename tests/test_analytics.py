@@ -1,21 +1,49 @@
 import json
 import os
 import sys
+import boto3
 import pytest
+from moto import mock_aws
 from unittest.mock import patch
 
 sys.path.append(os.path.abspath("lambda"))
+
+TABLE_NAME = "cloudbelly-dev-housing-events"
+DATASETS_TABLE_NAME = "cloudbelly-dev-datasets"
+BUCKET_NAME = "cloudbelly-team-dev-raw-events"
 
 
 @pytest.fixture(autouse=True)
 def set_env():
     with patch.dict(os.environ, {
-        "TABLE_NAME": "mock-table",
+        "TABLE_NAME": TABLE_NAME,
+        "DATASETS_TABLE_NAME": DATASETS_TABLE_NAME,
+        "BUCKET_NAME": BUCKET_NAME,
+        "STAGE": "dev",
         "AWS_DEFAULT_REGION": "us-east-1",
-        "AWS_ACCESS_KEY_ID": "test",
-        "AWS_SECRET_ACCESS_KEY": "test"
+        "AWS_REGION": "us-east-1"
     }):
         yield
+
+
+@pytest.fixture
+def aws_resources():
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName=TABLE_NAME,
+            KeySchema=[
+                {"AttributeName": "location", "KeyType": "HASH"},
+                {"AttributeName": "eventKey", "KeyType": "RANGE"}
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "location", "AttributeType": "S"},
+                {"AttributeName": "eventKey", "AttributeType": "S"}
+            ],
+            BillingMode="PAY_PER_REQUEST"
+        )
+
+        yield table
 
 
 def build_event(route, params=None, multi_params=None):
@@ -26,22 +54,26 @@ def build_event(route, params=None, multi_params=None):
     }
 
 
+def put_event(table, suburb, state, date, price):
+    table.put_item(Item={
+        "location": f"{state}#{suburb}",
+        "eventKey": date,
+        "date": date,
+        "price": price,
+        "suburb": suburb,
+        "state": state
+    })
+
+
 # Price summary
 class TestGetSummary:
-    @patch("analytics.handler.get_items")
-    def test_summary_success_single_suburb(self, mock_get_items):
-        mock_get_items.return_value = {
-            "Items": [
-                {"date": "2024-01-01", "price": "100",
-                    "suburb": "Sydney", "state": "NSW"},
-                {"date": "2024-01-02", "price": "200",
-                    "suburb": "Sydney", "state": "NSW"},
-                {"date": "2024-01-03", "price": "300",
-                    "suburb": "Sydney", "state": "NSW"},
-                {"date": "2024-01-04", "price": "400",
-                    "suburb": "Sydney", "state": "NSW"},
-            ]
-        }
+    def test_summary_success_single_suburb(self, aws_resources):
+        table = aws_resources
+
+        put_event(table, "Sydney", "NSW", "2024-01-01", 100)
+        put_event(table, "Sydney", "NSW", "2024-01-02", 200)
+        put_event(table, "Sydney", "NSW", "2024-01-03", 300)
+        put_event(table, "Sydney", "NSW", "2024-01-04", 400)
 
         from analytics.handler import lambda_handler
 
@@ -62,18 +94,11 @@ class TestGetSummary:
         assert data["max"] == 400
         assert data["median"] == 250
 
-    @patch("analytics.handler.get_items")
-    def test_summary_multiple_suburbs(self, mock_get_items):
-        mock_get_items.side_effect = [
-            {"Items": [
-                {"date": "2024-01-01", "price": "100",
-                    "suburb": "A", "state": "NSW"}
-            ]},
-            {"Items": [
-                {"date": "2024-01-01", "price": "300",
-                    "suburb": "B", "state": "NSW"}
-            ]}
-        ]
+    def test_summary_multiple_suburbs(self, aws_resources):
+        table = aws_resources
+
+        put_event(table, "A", "NSW", "2024-01-01", 100)
+        put_event(table, "B", "NSW", "2024-01-01", 300)
 
         from analytics.handler import lambda_handler
 
@@ -87,7 +112,8 @@ class TestGetSummary:
         body = json.loads(response["body"])
 
         assert response["statusCode"] == 200
-        assert len(body["datasets"][0]["data"]) == 1  # grouped by state
+        # grouped by state
+        assert len(body["datasets"][0]["data"]) == 1
         assert body["labels"] == ["NSW"]
 
     def test_summary_missing_suburb_returns_400(self):
@@ -105,21 +131,12 @@ class TestGetSummary:
 
 # Price trend
 class TestPriceTrend:
-    @patch("analytics.handler.get_items")
-    def test_price_trend_success(self, mock_get_items):
-        mock_get_items.side_effect = [
-            {
-                "Items": [
-                    {"date": "2024-01-01", "price": 100, "suburb": "A"},
-                    {"date": "2024-01-02", "price": 200, "suburb": "A"},
-                ]
-            },
-            {
-                "Items": [
-                    {"date": "2024-01-01", "price": 300, "suburb": "B"},
-                ]
-            }
-        ]
+    def test_price_trend_success(self, aws_resources):
+        table = aws_resources
+
+        put_event(table, "A", "NSW", "2024-01-01", 100)
+        put_event(table, "A", "NSW", "2024-01-02", 200)
+        put_event(table, "B", "NSW", "2024-01-01", 300)
 
         from analytics.handler import lambda_handler
 
@@ -136,18 +153,14 @@ class TestPriceTrend:
         assert len(body["datasets"]) == 2
 
         dates = body["datasets"][0]["data"]
-        assert len(dates) == 2  # union of dates
+        # union of dates
+        assert len(dates) == 2
 
-    @patch("analytics.handler.get_items")
-    def test_price_trend_handles_missing_dates(self, mock_get_items):
-        mock_get_items.side_effect = [
-            {"Items": [
-                {"date": "2024-01-01", "price": 100, "suburb": "A"}
-            ]},
-            {"Items": [
-                {"date": "2024-01-02", "price": 200, "suburb": "B"}
-            ]}
-        ]
+    def test_price_trend_handles_missing_dates(self, aws_resources):
+        table = aws_resources
+
+        put_event(table, "A", "NSW", "2024-01-01", 100)
+        put_event(table, "B", "NSW", "2024-01-02", 200)
 
         from analytics.handler import lambda_handler
 

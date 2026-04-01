@@ -1,7 +1,7 @@
 import os
 import sys
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from botocore.exceptions import ClientError
 
 sys.path.append(os.path.abspath("lambda"))
@@ -111,7 +111,8 @@ class TestGetItems:
         args, kwargs = mock_table.query.call_args
 
         expr = kwargs["KeyConditionExpression"]
-        assert expr is not None # ensures expression built
+        # ensures expression built
+        assert expr is not None
 
     @patch("analytics.handler.table")
     def test_query_with_only_start_date(self, mock_table):
