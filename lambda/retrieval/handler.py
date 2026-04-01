@@ -126,8 +126,11 @@ def get_events(event):
                 "locations": [item.get("state")],
                 "attributes": {
                     "price": float(item.get("price") or 0),
-                    "city": item.get("state"),
-                    "propertyType": item.get("property")
+                    "state": item.get("state"),
+                    "suburb": item.get("suburb"),
+                    "propertyType": item.get("propertyType"),
+                    "eventDescription": item.get("eventDescription"),
+                    "datasetId": item.get("datasetId")
                 }
             }
             for item in items
@@ -162,4 +165,5 @@ def get_datasets(_event):
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps({"DataSets": datasets}, default=str)
     }
