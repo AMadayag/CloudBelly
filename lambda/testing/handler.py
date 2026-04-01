@@ -80,6 +80,20 @@ def test_datasets_returns_datasets_key():
     assert "DataSets" in body, f"Response missing 'DataSets' key: {body}"
 
 
+def test_events_nonexistent_suburb_returns_empty():
+    r = get("/api/v1/events", params={
+        "suburb": "ThisSuburbDoesNotExist99999",
+        "state": "NSW"
+    })
+    assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+    body = r.json()
+    assert "events" in body, f"Response missing 'events' key: {body}"
+    assert body["events"] == [], (
+        f"Expected empty list for nonexistent suburb, got: {body['events']}"
+    )
+
+
+
 def test_summary_returns_200():
     r = get(
         "/api/v1/analytics/summary",
@@ -137,6 +151,8 @@ ALL_TESTS = [
     ("GET /events missing suburb returns 400",
      test_events_missing_suburb_returns_400),
     ("GET /events with date filter", test_events_with_date_filter),
+    ("GET /events nonexistent suburb returns empty",
+     test_events_nonexistent_suburb_returns_empty),
 
     # Datasets
     ("GET /datasets returns 200", test_datasets_returns_200),
