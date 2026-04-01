@@ -26,7 +26,7 @@ jobs:
           pip install flake8
 
       - name: Run linter
-        run: flake8 lambda/ --max-line-length=100 --exclude=lambda/testing/package
+        run: flake8 lambda/ --max-line-length=100 --exclude=lambda/testing/package,lambda/collection/deploy_package,lambda/collection/package
 
   type-check:
     name: Type Check
@@ -43,7 +43,7 @@ jobs:
         run: pip install mypy boto3-stubs types-requests
 
       - name: Run type checker
-        run: mypy lambda/ --ignore-missing-imports --explicit-package-bases --exclude lambda/testing/package
+        run: mypy lambda/ --ignore-missing-imports --explicit-package-bases --exclude lambda/testing/package --exclude lambda/collection/deploy_package --exclude lambda/collection/package
 
   test:
     name: Test and Coverage
