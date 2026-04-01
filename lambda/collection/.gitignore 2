@@ -1,0 +1,10 @@
+scraped_data/
+scraped/
+testFiles/
+.venv
+__pycache__/
+scraped
+test.json
+output.json
+package/
+handler.zip

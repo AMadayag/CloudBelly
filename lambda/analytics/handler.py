@@ -9,8 +9,16 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TABLE_NAME'])
+table = None
+
+
+def get_table():
+    global table
+    if table is None:
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get(
+                                        'AWS_DEFAULT_REGION', 'us-east-1'))
+        table = dynamodb.Table(os.environ['TABLE_NAME'])
+    return table
 
 
 def lambda_handler(event, context):
@@ -27,7 +35,6 @@ def lambda_handler(event, context):
         return {'statusCode': 404, 'body': json.dumps('Not found')}
 
 
-# GET /api/v1/analytics/summary
 def get_summary(event):
     params = event.get("queryStringParameters") or {}
     multi_params = event.get("multiValueQueryStringParameters") or {}
@@ -64,7 +71,6 @@ def get_summary(event):
                         "location": location, "items_returned": len(fetched)}))
             items.extend(fetched)
 
-        # group prices by suburb
         suburb_prices = {}
         for item in items:
             s = item['state']
@@ -116,7 +122,6 @@ def get_summary(event):
     }
 
 
-# GET /api/v1/analytics/price-trend
 def get_price_trend(event):
     params = event.get("queryStringParameters") or {}
     multi_params = event.get("multiValueQueryStringParameters") or {}
@@ -183,28 +188,28 @@ def get_price_trend(event):
     }
 
 
-# gets items with optional start and end date params
 def get_items(location, startDate, endDate):
+    t = get_table()
     try:
         if startDate and endDate:
-            response = table.query(
+            response = t.query(
                 KeyConditionExpression=Key('location').eq(location) & Key(
                     'eventKey').between(startDate, f"{endDate}#zzz")
             )
         elif startDate:
-            response = table.query(
+            response = t.query(
                 KeyConditionExpression=(
                     Key('location').eq(location)
                     & Key('eventKey').gte(startDate)
                 )
             )
         elif endDate:
-            response = table.query(
+            response = t.query(
                 KeyConditionExpression=Key('location').eq(
                     location) & Key('eventKey').lte(f"{endDate}#zzz")
             )
         else:
-            response = table.query(
+            response = t.query(
                 KeyConditionExpression=Key('location').eq(location)
             )
     except ClientError as e:
@@ -216,7 +221,6 @@ def get_items(location, startDate, endDate):
     return response
 
 
-# flattens nested items
 def parse_item(item):
     if 'date' in item and 'price' in item and 'suburb' in item:
         return item
