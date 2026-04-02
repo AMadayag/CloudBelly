@@ -2,36 +2,56 @@
 requests.compat
 ~~~~~~~~~~~~~~~
 
-This module previously handled import compatibility issues between Python 2
-and Python 3. It remains for backwards compatibility until the next major
-version.
+This module previously handled import compatibility issues
+between Python 2 and Python 3. It remains for backwards
+compatibility until the next major version.
 """
+
+try:
+    import chardet
+except ImportError:
+    import charset_normalizer as chardet
 
 import sys
 
-# JSON/simplejson module import resolution
+# -------
+# Pythons
+# -------
+
+# Syntax sugar.
+_ver = sys.version_info
+
+#: Python 2.x?
+is_py2 = _ver[0] == 2
+
+#: Python 3.x?
+is_py3 = _ver[0] == 3
+
+# json/simplejson module import resolution
+has_simplejson = False
 try:
-    import simplejson as json  # noqa: F401
-    from simplejson import JSONDecodeError  # noqa: F401
+    import simplejson as json
+
+    has_simplejson = True
 except ImportError:
-    import json  # noqa: F401
-    from json import JSONDecodeError  # noqa: F401
+    import json
 
-# Optional charset library for compatibility
-try:
-    import chardet  # noqa: F401
-except ImportError:
-    import charset_normalizer as chardet  # noqa: F401
+if has_simplejson:
+    from simplejson import JSONDecodeError
+else:
+    from json import JSONDecodeError
 
-# Keep OrderedDict for backwards compatibility
-from collections import OrderedDict  # noqa: F401
-from collections.abc import Callable, Mapping, MutableMapping  # noqa: F401
-from http import cookiejar as cookielib  # noqa: F401
-from http.cookies import Morsel  # noqa: F401
-from io import StringIO  # noqa: F401
+# Keep OrderedDict for backwards compatibility.
+from collections import OrderedDict
+from collections.abc import Callable, Mapping, MutableMapping
+from http import cookiejar as cookielib
+from http.cookies import Morsel
+from io import StringIO
 
-# Legacy urllib imports
-from urllib.parse import (  # noqa: F401
+# --------------
+# Legacy Imports
+# --------------
+from urllib.parse import (
     quote,
     quote_plus,
     unquote,
@@ -43,7 +63,7 @@ from urllib.parse import (  # noqa: F401
     urlsplit,
     urlunparse,
 )
-from urllib.request import (  # noqa: F401
+from urllib.request import (
     getproxies,
     getproxies_environment,
     parse_http_list,
@@ -51,23 +71,6 @@ from urllib.request import (  # noqa: F401
     proxy_bypass_environment,
 )
 
-# --------
-# Pythons
-# --------
-
-# Syntax sugar.
-_ver = sys.version_info
-
-#: Python 2.x?
-is_py2 = _ver[0] == 2
-
-#: Python 3.x?
-is_py3 = _ver[0] == 3
-
-# Did we get simplejson?
-has_simplejson = 'simplejson' in sys.modules
-
-# Type aliases for compatibility
 builtin_str = str
 str = str
 bytes = bytes

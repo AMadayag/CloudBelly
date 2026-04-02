@@ -59,11 +59,7 @@ _codes = {
     404: ("not_found", "-o-"),
     405: ("method_not_allowed", "not_allowed"),
     406: ("not_acceptable",),
-    407: (
-        "proxy_authentication_required",
-        "proxy_auth",
-        "proxy_authentication",
-    ),
+    407: ("proxy_authentication_required", "proxy_auth", "proxy_authentication"),
     408: ("request_timeout", "timeout"),
     409: ("conflict",),
     410: ("gone",),
@@ -104,11 +100,7 @@ _codes = {
     507: ("insufficient_storage",),
     509: ("bandwidth_limit_exceeded", "bandwidth"),
     510: ("not_extended",),
-    511: (
-        "network_authentication_required",
-        "network_auth",
-        "network_authentication",
-    ),
+    511: ("network_authentication_required", "network_auth", "network_authentication"),
 }
 
 codes = LookupDict(name="status_codes")
@@ -126,9 +118,11 @@ def _init():
         return "* %d: %s" % (code, names)
 
     global __doc__
-    if __doc__ is not None:
-        code_docs = "\n".join(doc(code) for code in sorted(_codes))
-        __doc__ = __doc__ + "\n" + code_docs
+    __doc__ = (
+        __doc__ + "\n" + "\n".join(doc(code) for code in sorted(_codes))
+        if __doc__ is not None
+        else None
+    )
 
 
 _init()
