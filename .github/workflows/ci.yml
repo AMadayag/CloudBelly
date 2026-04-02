@@ -73,6 +73,7 @@ jobs:
           pytest --cov=lambda \
             --cov-report=term-missing \
             --cov-report=xml \
+            --cov-fail-under=85 \
             --ignore=lambda/testing/package \
             --ignore=lambda/collection/package \
             -p no:cacheprovider \
