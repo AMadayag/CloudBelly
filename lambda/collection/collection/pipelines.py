@@ -55,38 +55,56 @@ class TotalValueOfDwellingsPipeline(DatasetPipeline):
         dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
         table = dynamodb.Table(os.environ['TABLE_NAME'])
 
-        datasets_table = dynamodb.Table(os.environ['DATASETS_TABLE_NAME'])
-        datasets_table.put_item(Item={
+        datasetsTable = dynamodb.Table(os.environ['DATASETS_TABLE_NAME'])
+        datasetsTable.put_item(Item={
             "datasetId": f"ds_{str(uuid.uuid4())}",
             "name": "ABS Total Value of Dwellings",
-            "datasource": self.crawlerDomain,
+            "datasource": self.spiderDomain,
             "locations": list(set([event['area'] for event in self.getEvents()])),
             "eventCount": len(self.getEvents())
         })
         
         for event in self.getEvents():
-            table.put_item(Item={
-                "eventId": str(uuid.uuid4()),
-                "date": event.date,
-                "state": event.area,
-                "suburb": "N/A",
-                "value": event.median_price_of_established_house_transfers,
-                "propertyType": "house",
+            houseEventId = f"evt_{uuid.uuid4()}"
+            dwellingEventId = f"evt_{uuid.uuid4()}"
+
+            if event['median_price_of_established_house_transfers']:
+                table.put_item(Item={
+                    "location": f"{event['area']}#N/A",
+                    "eventId": house_event_id,
+                    "eventKey": f"{event['date']}#{house_event_id}",
+                    "date": event['date'],
+                    "state": event['area'],
+                    "suburb": "N/A",
+                    "price": event['median_price_of_established_house_transfers'],
+                    "property": "house",
             })
-            table.put_item(Item={
-                "eventId": str(uuid.uuid4()),
-                "date": event.date,
-                "state": event.area,
-                "suburb": "N/A",
-                "value": event.median_price_of_attached_dwelling_transfers,
-                "propertyType": "attached_dwelling"
-            })
+            
+            if event['median_price_of_attached_dwelling_transfers']:
+                table.put_item(Item={
+                    "location": f"{event['area']}#N/A",
+                    "eventId": dwelling_event_id,
+                    "eventKey": f"{event['date']}#{dwelling_event_id}",
+                    "date": event['date'],
+                    "state": event['area'],
+                    "suburb": "N/A",
+                    "price": event['median_price_of_attached_dwelling_transfers'],
+                    "property": "attached_dwelling"
 
 class PropertySalesInformationPipeline(DatasetPipeline):
     def finish(self):
         super().finish()
+        datasetsTable = dynamodb.Table(os.environ['DATASETS_TABLE_NAME'])
+        datasetsTable.put_item(Item={
+            "datasetId": f"ds_{str(uuid.uuid4())}",
+            "name": "NSW Property Sales Data",
+            "datasource": self.spiderDomain,
+            "locations": list(set([event['area'] for event in self.getEvents()])),
+            "eventCount": len(self.getEvents())
+        })
+
         dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
-        table = dynamodb.Table("cloudbelly-dev-housing-events")
+        table = dynamodb.Table(os.environ['TABLE_NAME'])
         for event in self.getEvents():
             propertyType = "N/A"
             if event["Primary purpose"] == "Residence" \
@@ -98,12 +116,16 @@ class PropertySalesInformationPipeline(DatasetPipeline):
             else:
                 propertyType = event["Primary purpose"]
 
+            suburb = event["Property locality"]
+            houseEventId = f"evt_{uuid.uuid4()}"
+
             table.put_item(Item={
-                "eventId": str(uuid.uuid4()),
+                "location": f"NSW#{suburb}",
+                "eventId": ,
                 "date": event["Settlement date"],
                 "state": "NSW",
-                "suburb": event["Property locality"],
-                "value": event["Purchase price"],
-                "propertyType": propertyType,
+                "suburb": suburb,
+                "price": event["Purchase price"],
+                "property": propertyType,
             })
 

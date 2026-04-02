@@ -1,10 +1,10 @@
 resource "aws_s3_bucket" "s3_bucket" {
-  bucket = var.bucket_name
+  bucket = local.bucket_name
 
   tags = {
-    Name    = var.bucket_name
-    Project = var.project_name
-    Stage   = var.stage
+    Name    = local.bucket_name
+    Project = local.project_name
+    Stage   = local.stage
   }
 }
 

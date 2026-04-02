@@ -19,4 +19,3 @@ class Spider:
 
     def log(self, message):
         print(f"[Spider:{self.name}] LOG: {message}")
-
