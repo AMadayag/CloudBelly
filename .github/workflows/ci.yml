@@ -74,6 +74,7 @@ jobs:
             --cov-report=term-missing \
             --cov-report=xml \
             --ignore=lambda/testing/package \
+            --ignore=lambda/collection/package \
             -p no:cacheprovider \
             -v || echo "No tests collected yet"
 
