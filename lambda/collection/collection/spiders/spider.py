@@ -1,5 +1,3 @@
-from collection.pipelines import DatasetPipeline
-
 class Spider:
     def __init__(self, name, domain):
         self.name = name

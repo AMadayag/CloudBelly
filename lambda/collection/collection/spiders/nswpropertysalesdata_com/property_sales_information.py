@@ -4,8 +4,8 @@ import io
 import zipfile
 import csv
 
-from collection.pipelines import DatasetPipeline
 from collection.spiders.spider import Spider
+
 
 class PropertySalesInformationSpider(Spider):
     def __init__(self):
@@ -23,13 +23,14 @@ class PropertySalesInformationSpider(Spider):
         htmlContent = html.fromstring(response.content)
         identifier1 = "download"
         identifier2 = "Download"
-        dataCsvFile = htmlContent.xpath(f'//div[@id="{identifier1}" and a[text()="{identifier2}"]]/a/@href')[0]
+        dataCsvFile = htmlContent.xpath(f'//div[@id="{identifier1}" and '
+                                        + f'a[text()="{identifier2}"]]/a/@href')[0]
 
         dataCsvLink = f"https://{self.getDomain()}{dataCsvFile}"
         self.log(f"Downloading: {dataCsvLink}")
-        
+
         self.parseCsvData(requests.get(dataCsvLink))
-    
+
     def parseCsvData(self, response):
         self.log("parsing CSV")
         with zipfile.ZipFile(io.BytesIO(response.content), "r") as file:

@@ -5,6 +5,7 @@ import pandas as pd
 from lxml import html
 from collection.spiders.spider import Spider
 
+
 class TotalValueOfDwellingsScraper(Spider):
     def __init__(self):
         super().__init__("total_value_of_dwellings", "www.abs.gov.au")

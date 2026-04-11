@@ -3,17 +3,18 @@ import logging
 import os
 from collection.pipelines import (
         TotalValueOfDwellingsPipeline,
-        PropertySalesNswPipeline
+        PropertySalesInformationSpider
 )
 from collection.spiders.www_abs_gov_au.total_value_of_dwellings import (
     TotalValueOfDwellingsSpider
 )
 from collection.spiders.nswpropertysalesdata_com.property_sales_information import (
-    PropertySalesNswSpider
+    PropertySalesInformationPipeline
 )
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 
 def lambda_handler(event, context):
     bucket = os.environ.get("BUCKET_NAME")
@@ -32,7 +33,7 @@ def lambda_handler(event, context):
         propertySalesNswSpider.getName(), propertySalesNswSpider.getDomain(), bucket)
     propertySalesNswSpider.setPipeline(propertySalesNswPipeline)
     spiders.append(propertySalesNswSpider)
-    
+
     try:
         for spider in spiders:
             logger.info(json.dumps(
