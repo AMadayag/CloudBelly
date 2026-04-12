@@ -32,7 +32,8 @@ def lambda_handler(event, context):
     else:
         logger.warning(json.dumps(
             {"event": "route_not_found", "route": route}))
-        return {'statusCode': 404, 'body': json.dumps('Not found')}
+        return {'statusCode': 404, 'body': json.dumps('Not found'), 
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}}
 
 
 def get_summary(event):
@@ -47,7 +48,8 @@ def get_summary(event):
         logger.warning(json.dumps({"event": "validation_error",
                        "route": "summary", "reason": "no suburb provided"}))
         return {'statusCode': 400, 'body': json.dumps(
-                {'error': 'At least one suburb is required'})}
+                {'error': 'At least one suburb is required'}),
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}}
 
     startDate = params.get("from")
     endDate = params.get("to")
@@ -113,11 +115,12 @@ def get_summary(event):
     except ClientError as e:
         logger.error(json.dumps(
             {"event": "dynamodb_error", "route": "summary", "error": str(e)}))
-        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)}),
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}}
 
     return {
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps(data, default=str)
     }
 
@@ -135,7 +138,8 @@ def get_price_trend(event):
             {"event": "validation_error", "route": "price-trend",
                 "reason": "no suburb provided"}))
         return {'statusCode': 400, 'body': json.dumps(
-                {'error': 'At least one suburb is required'})}
+                {'error': 'At least one suburb is required'}),
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}}
 
     startDate = params.get("from")
     endDate = params.get("to")
@@ -179,11 +183,12 @@ def get_price_trend(event):
     except ClientError as e:
         logger.error(json.dumps({"event": "dynamodb_error",
                      "route": "price-trend", "error": str(e)}))
-        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)}),
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}}
 
     return {
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps(data, default=str)
     }
 
