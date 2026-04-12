@@ -32,7 +32,7 @@ def lambda_handler(event, context):
     else:
         logger.warning(json.dumps(
             {"event": "route_not_found", "route": route}))
-        return {'statusCode': 404, 'body': json.dumps('Not found'), 
+        return {'statusCode': 404, 'body': json.dumps('Not found'),
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}}
 
 
