@@ -25,7 +25,8 @@ def lambda_handler(event, context):
     else:
         logger.warning(json.dumps(
                             {"event": "route_not_found", "route": route}))
-        return {'statusCode': 404, 'body': json.dumps('Not found')}
+        return {'statusCode': 404, 'body': json.dumps('Not found'),
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}}
 
 
 # GET /api/v1/events
@@ -38,7 +39,7 @@ def get_events(event):
                        "route": "events", "reason": "no suburb provided"}))
         return {
             'statusCode': 400,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({"error": "suburb is required"})
         }
 
@@ -144,7 +145,7 @@ def get_events(event):
 
     return {
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({"events": events}, default=str)
     }
 
@@ -164,6 +165,6 @@ def get_datasets(_event):
 
     return {
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({"DataSets": datasets}, default=str)
     }
