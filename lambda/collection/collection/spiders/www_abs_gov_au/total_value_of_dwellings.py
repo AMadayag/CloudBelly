@@ -16,6 +16,7 @@ class TotalValueOfDwellingsScraper(Spider):
                "price-indexes-and-inflation")
         url += "/total-value-dwellings/latest-release"
         self.parse(requests.get(url))
+        self.pipeline.finish()
         self.log("Finished")
 
     def parse(self, response):

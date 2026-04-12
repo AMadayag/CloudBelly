@@ -9,11 +9,11 @@ class Spider:
     def getDomain(self):
         return self.domain
 
-    def setPipeline(self, DatasetPipeline):
-        self.pipeline = DatasetPipeline
+    def setPipeline(self, pipeline):
+        self.pipeline = pipeline
 
     def start(self, start):
         pass
 
     def log(self, message):
-        print(f"[{self.name}] LOG: {message}")
+        print(f"[Spider:{self.name}] LOG: {message}")

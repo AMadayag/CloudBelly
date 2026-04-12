@@ -1,9 +1,15 @@
 import json
 import logging
 import os
-from collection.pipelines import TotalValueOfDwellingsPipeline
+from collection.pipelines import (
+        TotalValueOfDwellingsPipeline,
+        PropertySalesInformationSpider
+)
 from collection.spiders.www_abs_gov_au.total_value_of_dwellings import (
-    TotalValueOfDwellingsScraper
+    TotalValueOfDwellingsSpider
+)
+from collection.spiders.nswpropertysalesdata_com.property_sales_information import (
+    PropertySalesInformationPipeline
 )
 
 logger = logging.getLogger()
@@ -15,14 +21,18 @@ def lambda_handler(event, context):
     logger.info(json.dumps({"event": "collection_started", "bucket": bucket}))
 
     spiders = []
-    pipelines = []
 
-    absScraper = TotalValueOfDwellingsScraper()
+    absSpider = TotalValueOfDwellingsSpider()
     absPipeline = TotalValueOfDwellingsPipeline(
-        absScraper.getName(), absScraper.getDomain(), bucket)
-    absScraper.setPipeline(absPipeline)
-    spiders.append(absScraper)
-    pipelines.append(absPipeline)
+        absSpider.getName(), absSpider.getDomain(), bucket)
+    absSpider.setPipeline(absPipeline)
+    spiders.append(absSpider)
+
+    propertySalesNswSpider = PropertySalesInformationSpider()
+    propertySalesNswPipeline = PropertySalesInformationPipeline(
+        propertySalesNswSpider.getName(), propertySalesNswSpider.getDomain(), bucket)
+    propertySalesNswSpider.setPipeline(propertySalesNswPipeline)
+    spiders.append(propertySalesNswSpider)
 
     try:
         for spider in spiders:
@@ -31,13 +41,6 @@ def lambda_handler(event, context):
             spider.start()
             logger.info(json.dumps(
                 {"event": "spider_finished", "spider": spider.getName()}))
-
-        for pipeline in pipelines:
-            logger.info(json.dumps({"event": "pipeline_started",
-                        "pipeline": pipeline.__class__.__name__}))
-            pipeline.finish()
-            logger.info(json.dumps({"event": "pipeline_finished",
-                        "pipeline": pipeline.__class__.__name__}))
 
     except Exception as e:
         logger.error(json.dumps(
