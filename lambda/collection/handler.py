@@ -6,7 +6,7 @@ from collection.pipelines import (
         PropertySalesInformationPipeline
 )
 from collection.spiders.www_abs_gov_au.total_value_of_dwellings import (
-    TotalValueOfDwellingsSpider
+    TotalValueOfDwellingsScraper as TotalValueOfDwellingsSpider
 )
 from collection.spiders.nswpropertysalesdata_com.property_sales_information import (
     PropertySalesInformationSpider
