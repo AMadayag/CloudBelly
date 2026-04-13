@@ -28,11 +28,11 @@ def lambda_handler(event, context):
     absSpider.setPipeline(absPipeline)
     spiders.append(absSpider)
 
-    propertySalesNswSpider = PropertySalesInformationSpider()
-    propertySalesNswPipeline = PropertySalesInformationPipeline(
-        propertySalesNswSpider.getName(), propertySalesNswSpider.getDomain(), bucket)
-    propertySalesNswSpider.setPipeline(propertySalesNswPipeline)
-    spiders.append(propertySalesNswSpider)
+    #propertySalesNswSpider = PropertySalesInformationSpider()
+    #propertySalesNswPipeline = PropertySalesInformationPipeline(
+    #    propertySalesNswSpider.getName(), propertySalesNswSpider.getDomain(), bucket)
+    #propertySalesNswSpider.setPipeline(propertySalesNswPipeline)
+    #spiders.append(propertySalesNswSpider)
 
     try:
         for spider in spiders:
