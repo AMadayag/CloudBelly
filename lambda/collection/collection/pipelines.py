@@ -134,4 +134,12 @@ class PropertySalesInformationPipeline(DatasetPipeline):
                 "suburb": suburb,
                 "price": event["Purchase price"],
                 "property": propertyType,
+                "postcode": event.get("Property post code", ""),
+                "streetName": event.get("Property street name", ""),
+                "houseNumber": event.get("Property house number", ""),
+                "natureOfProperty": event.get("Nature of property", ""),
+                "zoning": event.get("Zoning", ""),
+                "area": event.get("Area", ""),
+                "contractDate": event.get("Contract date", ""),
+                "legalDescription": event.get("Property legal description", ""),
             })
