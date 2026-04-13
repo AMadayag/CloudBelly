@@ -108,11 +108,10 @@ class PropertySalesInformationPipeline(DatasetPipeline):
             "datasetId": f"ds_{str(uuid.uuid4())}",
             "name": "NSW Property Sales Data",
             "datasource": self.spiderDomain,
-            "locations": list(set([event['area'] for event in self.getEvents()])),
+            "locations": list(set([event['Property locality'] for event in self.getEvents()])),
             "eventCount": len(self.getEvents())
         })
 
-        dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
         table = dynamodb.Table(os.environ['TABLE_NAME'])
         for event in self.getEvents():
             propertyType = "N/A"
@@ -129,6 +128,7 @@ class PropertySalesInformationPipeline(DatasetPipeline):
             table.put_item(Item={
                 "location": f"NSW#{suburb}",
                 "eventId": houseEventId,
+                "eventKey": f"{event['Settlement date']}#{houseEventId}",
                 "date": event["Settlement date"],
                 "state": "NSW",
                 "suburb": suburb,
