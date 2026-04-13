@@ -3,13 +3,13 @@ import logging
 import os
 from collection.pipelines import (
         TotalValueOfDwellingsPipeline,
-        PropertySalesInformationSpider
+        PropertySalesInformationPipeline
 )
 from collection.spiders.www_abs_gov_au.total_value_of_dwellings import (
     TotalValueOfDwellingsSpider
 )
 from collection.spiders.nswpropertysalesdata_com.property_sales_information import (
-    PropertySalesInformationPipeline
+    PropertySalesInformationSpider
 )
 
 logger = logging.getLogger()
