@@ -22,17 +22,17 @@ def lambda_handler(event, context):
 
     spiders = []
 
-    absSpider = TotalValueOfDwellingsSpider()
-    absPipeline = TotalValueOfDwellingsPipeline(
-        absSpider.getName(), absSpider.getDomain(), bucket)
-    absSpider.setPipeline(absPipeline)
-    spiders.append(absSpider)
+    #absSpider = TotalValueOfDwellingsSpider()
+    #absPipeline = TotalValueOfDwellingsPipeline(
+    #    absSpider.getName(), absSpider.getDomain(), bucket)
+    #absSpider.setPipeline(absPipeline)
+    #spiders.append(absSpider)
 
-    #propertySalesNswSpider = PropertySalesInformationSpider()
-    #propertySalesNswPipeline = PropertySalesInformationPipeline(
-    #    propertySalesNswSpider.getName(), propertySalesNswSpider.getDomain(), bucket)
-    #propertySalesNswSpider.setPipeline(propertySalesNswPipeline)
-    #spiders.append(propertySalesNswSpider)
+    propertySalesNswSpider = PropertySalesInformationSpider()
+    propertySalesNswPipeline = PropertySalesInformationPipeline(
+        propertySalesNswSpider.getName(), propertySalesNswSpider.getDomain(), bucket)
+    propertySalesNswSpider.setPipeline(propertySalesNswPipeline)
+    spiders.append(propertySalesNswSpider)
 
     try:
         for spider in spiders:
