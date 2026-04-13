@@ -129,9 +129,17 @@ def get_events(event):
                     "price": float(item.get("price") or 0),
                     "state": item.get("state"),
                     "suburb": item.get("suburb"),
-                    "propertyType": item.get("propertyType"),
+                    "propertyType": item.get("property"),
                     "eventDescription": item.get("eventDescription"),
-                    "datasetId": item.get("datasetId")
+                    "datasetId": item.get("datasetId"),
+                    "postcode": item.get("postcode"),
+                    "streetName": item.get("streetName"),
+                    "houseNumber": item.get("houseNumber"),
+                    "natureOfProperty": item.get("natureOfProperty"),
+                    "zoning": item.get("zoning"),
+                    "area": item.get("area"),
+                    "contractDate": item.get("contractDate"),
+                    "legalDescription": item.get("legalDescription"),
                 }
             }
             for item in items
