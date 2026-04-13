@@ -33,9 +33,15 @@ class PropertySalesInformationSpider(Spider):
 
     def parseCsvData(self, response):
         self.log("parsing CSV")
+        allowed_suburbs = {
+            "BLACKTOWN", "PARRAMATTA", "CHATSWOOD",
+            "BONDI", "MANLY", "NEWTOWN", "RANDWICK",
+            "SURRY HILLS", "CASTLE HILL", "HOMEBUSH"
+        }
         with zipfile.ZipFile(io.BytesIO(response.content), "r") as file:
             csvFileName = file.namelist()[0]
             csvContents = file.read(csvFileName)
             reader = csv.DictReader(io.StringIO(csvContents.decode("utf-8")))
             for row in reader:
-                self.pipeline.processItem(row)
+                if row["Property locality"].upper() in allowed_suburbs:
+                    self.pipeline.processItem(row)
