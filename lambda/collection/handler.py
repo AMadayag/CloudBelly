@@ -1,13 +1,14 @@
 import json
 import logging
 import os
-from collection.pipelines import (
-        TotalValueOfDwellingsPipeline,
-        PropertySalesInformationPipeline
-)
-from collection.spiders.www_abs_gov_au.total_value_of_dwellings import (
-    TotalValueOfDwellingsScraper as TotalValueOfDwellingsSpider
-)
+# from collection.pipelines import (
+#        TotalValueOfDwellingsPipeline,
+#        PropertySalesInformationPipeline
+# )
+from collection.pipelines import PropertySalesInformationPipeline
+# from collection.spiders.www_abs_gov_au.total_value_of_dwellings import (
+#     TotalValueOfDwellingsScraper as TotalValueOfDwellingsSpider
+# )
 from collection.spiders.nswpropertysalesdata_com.property_sales_information import (
     PropertySalesInformationSpider
 )
@@ -22,11 +23,11 @@ def lambda_handler(event, context):
 
     spiders = []
 
-    #absSpider = TotalValueOfDwellingsSpider()
-    #absPipeline = TotalValueOfDwellingsPipeline(
+    # absSpider = TotalValueOfDwellingsSpider()
+    # absPipeline = TotalValueOfDwellingsPipeline(
     #    absSpider.getName(), absSpider.getDomain(), bucket)
-    #absSpider.setPipeline(absPipeline)
-    #spiders.append(absSpider)
+    # absSpider.setPipeline(absPipeline)
+    # spiders.append(absSpider)
 
     propertySalesNswSpider = PropertySalesInformationSpider()
     propertySalesNswPipeline = PropertySalesInformationPipeline(

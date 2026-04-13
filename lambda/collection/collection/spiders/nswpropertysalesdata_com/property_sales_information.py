@@ -38,10 +38,15 @@ class PropertySalesInformationSpider(Spider):
             "BONDI", "MANLY", "NEWTOWN", "RANDWICK",
             "SURRY HILLS", "CASTLE HILL", "HOMEBUSH"
         }
+        max_rows = 50000
+        rows_read = 0
         with zipfile.ZipFile(io.BytesIO(response.content), "r") as file:
             csvFileName = file.namelist()[0]
             csvContents = file.read(csvFileName)
             reader = csv.DictReader(io.StringIO(csvContents.decode("utf-8")))
             for row in reader:
+                if rows_read >= max_rows:
+                    break
+                rows_read += 1
                 if row["Property locality"].upper() in allowed_suburbs:
                     self.pipeline.processItem(row)
