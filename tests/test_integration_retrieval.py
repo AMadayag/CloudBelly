@@ -203,6 +203,60 @@ class TestCollectionToRetrievalEvents:
         assert response["statusCode"] == 400
 
 
+# Collection → Retrieval: Recent Events
+class TestCollectionToRetrievalRecentEvents:
+    def test_recent_endpoint_reads_pipeline_written_data(self, aws_resources):
+        """Collection writes events → recent endpoint returns them."""
+        run_pipeline(area="New South Wales", house_price=950000)
+        rh = get_retrieval_handler()
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent",
+                        {"suburb": "N/A", "state": "New South Wales"}),
+            None
+        )
+
+        assert response["statusCode"] == 200
+        body = json.loads(response["body"])
+        assert "events" in body
+        assert len(body["events"]) >= 1
+
+    def test_recent_endpoint_missing_state_returns_400(self, aws_resources):
+        """Validation still returns 400 even when real pipeline data exists."""
+        run_pipeline()
+        rh = get_retrieval_handler()
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent", {"suburb": "N/A"}),
+            None
+        )
+
+        assert response["statusCode"] == 400
+
+    def test_recent_endpoint_returns_at_most_10_pipeline_events(
+        self, aws_resources
+    ):
+        """Recent endpoint returns at most 10 events even with more in DB."""
+        for i in range(12):
+            run_pipeline(
+                area="New South Wales",
+                date=f"2024-{i + 1:02d}-01",
+                house_price=900000 + i * 1000,
+                dwelling_price=None
+            )
+        rh = get_retrieval_handler()
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent",
+                        {"suburb": "N/A", "state": "New South Wales"}),
+            None
+        )
+        body = json.loads(response["body"])
+
+        assert response["statusCode"] == 200
+        assert len(body["events"]) <= 10
+
+
 # Collection → Retrieval: Datasets
 class TestCollectionToRetrievalDatasets:
     def test_pipeline_written_dataset_is_readable_by_retrieval(
