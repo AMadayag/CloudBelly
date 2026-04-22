@@ -22,6 +22,8 @@ def lambda_handler(event, context):
         return get_events(event)
     elif route == "GET /api/v1/datasets":
         return get_datasets(event)
+    elif route == "GET /api/v1/events/recent":
+        return get_recent_events(event)
     else:
         logger.warning(json.dumps(
                             {"event": "route_not_found", "route": route}))
@@ -175,4 +177,56 @@ def get_datasets(_event):
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({"DataSets": datasets}, default=str)
+    }
+
+
+# GET /api/v1/events/recent
+def get_recent_events(event):
+    params = event.get("queryStringParameters") or {}
+    suburb = params.get("suburb")
+    state = params.get("state")
+
+    if not suburb or not state:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({"error": "suburb and state are required"})
+        }
+
+    location = f"{state}#{suburb}"
+
+    try:
+        response = table.query(
+            KeyConditionExpression=Key('location').eq(location),
+            ScanIndexForward=False,
+            Limit=10
+        )
+        items = response.get('Items', [])
+
+        events = [
+            {
+                "eventId": item.get("eventId"),
+                "date": item.get("date"),
+                "price": float(item.get("price") or 0),
+                "suburb": item.get("suburb"),
+                "state": item.get("state"),
+                "propertyType": item.get("property"),
+                "streetName": item.get("streetName"),
+                "houseNumber": item.get("houseNumber"),
+                "postcode": item.get("postcode"),
+            }
+            for item in items
+        ]
+
+    except ClientError as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({"error": str(e)})
+        }
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({"events": events}, default=str)
     }
