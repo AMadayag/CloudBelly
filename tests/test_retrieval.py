@@ -269,6 +269,154 @@ class TestGetDatasets:
         assert int(ds["eventCount"]) == 250
 
 
+# Recent Events
+class TestGetRecentEvents:
+    def _put_recent_event(self, table, suburb, state, date, price,
+                          event_id="evt-r1", property_type="House",
+                          street_name="George St", house_number="10",
+                          postcode="2000"):
+        table.put_item(Item={
+            "location": f"{state}#{suburb}",
+            "eventKey": f"{date}#{event_id}",
+            "eventId": event_id,
+            "date": date,
+            "state": state,
+            "suburb": suburb,
+            "price": price,
+            "propertyType": property_type,
+            "streetName": street_name,
+            "houseNumber": house_number,
+            "postcode": postcode,
+        })
+
+    def test_get_recent_events_returns_200(self, aws_resources):
+        events_table, _ = aws_resources
+        self._put_recent_event(events_table, "Sydney", "NSW", "2024-01-01",
+                               950000)
+
+        import importlib
+        import retrieval.handler as rh
+        importlib.reload(rh)
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent",
+                        {"suburb": "Sydney", "state": "NSW"}),
+            None
+        )
+
+        assert response["statusCode"] == 200
+
+    def test_get_recent_events_returns_events_key(self, aws_resources):
+        events_table, _ = aws_resources
+        self._put_recent_event(events_table, "Sydney", "NSW", "2024-01-01",
+                               950000)
+
+        import importlib
+        import retrieval.handler as rh
+        importlib.reload(rh)
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent",
+                        {"suburb": "Sydney", "state": "NSW"}),
+            None
+        )
+        body = json.loads(response["body"])
+
+        assert "events" in body
+
+    def test_get_recent_events_returns_correct_fields(self, aws_resources):
+        events_table, _ = aws_resources
+        self._put_recent_event(
+            events_table, "Sydney", "NSW", "2024-01-01", 950000,
+            event_id="evt-r99", street_name="George St",
+            house_number="10", postcode="2000"
+        )
+
+        import importlib
+        import retrieval.handler as rh
+        importlib.reload(rh)
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent",
+                        {"suburb": "Sydney", "state": "NSW"}),
+            None
+        )
+        body = json.loads(response["body"])
+        evt = body["events"][0]
+
+        assert evt["eventId"] == "evt-r99"
+        assert evt["date"] == "2024-01-01"
+        assert evt["price"] == 950000.0
+        assert evt["suburb"] == "Sydney"
+        assert evt["state"] == "NSW"
+        assert evt["streetName"] == "George St"
+        assert evt["houseNumber"] == "10"
+        assert evt["postcode"] == "2000"
+
+    def test_get_recent_events_missing_suburb_returns_400(self, aws_resources):
+        import importlib
+        import retrieval.handler as rh
+        importlib.reload(rh)
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent", {"state": "NSW"}),
+            None
+        )
+
+        assert response["statusCode"] == 400
+
+    def test_get_recent_events_missing_state_returns_400(self, aws_resources):
+        import importlib
+        import retrieval.handler as rh
+        importlib.reload(rh)
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent", {"suburb": "Sydney"}),
+            None
+        )
+
+        assert response["statusCode"] == 400
+
+    def test_get_recent_events_returns_at_most_10(self, aws_resources):
+        events_table, _ = aws_resources
+        for i in range(12):
+            self._put_recent_event(
+                events_table, "Sydney", "NSW", f"2024-{i + 1:02d}-01",
+                900000 + i * 1000, event_id=f"evt-r{i}"
+            )
+
+        import importlib
+        import retrieval.handler as rh
+        importlib.reload(rh)
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent",
+                        {"suburb": "Sydney", "state": "NSW"}),
+            None
+        )
+        body = json.loads(response["body"])
+
+        assert response["statusCode"] == 200
+        assert len(body["events"]) <= 10
+
+    def test_get_recent_events_nonexistent_location_returns_empty(
+        self, aws_resources
+    ):
+        import importlib
+        import retrieval.handler as rh
+        importlib.reload(rh)
+
+        response = rh.lambda_handler(
+            build_event("GET /api/v1/events/recent",
+                        {"suburb": "NoSuchPlace", "state": "NSW"}),
+            None
+        )
+        body = json.loads(response["body"])
+
+        assert response["statusCode"] == 200
+        assert body["events"] == []
+
+
 # Router
 class TestLambdaHandler:
     def test_unknown_route_returns_404(self, aws_resources):
