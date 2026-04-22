@@ -108,6 +108,30 @@ class TestEvents:
         assert "attributes" in event and "price" in event["attributes"]
 
 
+class TestRecentEvents:
+    def test_recent_events_returns_200(self):
+        r = get("/api/v1/events/recent",
+                params={"suburb": "N/A", "state": "New South Wales"})
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+
+    def test_recent_events_missing_suburb_returns_400(self):
+        r = get("/api/v1/events/recent", params={"state": "New South Wales"})
+        assert r.status_code == 400, (
+            f"Expected 400 when suburb missing, got {r.status_code}"
+        )
+
+    def test_recent_events_nonexistent_suburb_returns_empty(self):
+        r = get("/api/v1/events/recent", params={
+            "suburb": "ThisSuburbDoesNotExist99999",
+            "state": "NSW"
+        })
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        body = r.json()
+        assert body["events"] == [], (
+            f"Expected empty list for nonexistent suburb, got: {body['events']}"
+        )
+
+
 class TestDatasets:
     def test_datasets_are_list(self):
         r = get("/api/v1/datasets")
@@ -157,6 +181,12 @@ ALL_TESTS = [
         TestEvents().test_date_filter_respects_bounds),
     ("TestEvents.test_event_shape",
         TestEvents().test_event_shape),
+    ("TestRecentEvents.test_recent_events_returns_200",
+        TestRecentEvents().test_recent_events_returns_200),
+    ("TestRecentEvents.test_recent_events_missing_suburb_returns_400",
+        TestRecentEvents().test_recent_events_missing_suburb_returns_400),
+    ("TestRecentEvents.test_recent_events_nonexistent_suburb_returns_empty",
+        TestRecentEvents().test_recent_events_nonexistent_suburb_returns_empty),
     ("TestDatasets.test_datasets_are_list",
         TestDatasets().test_datasets_are_list),
     ("TestSummary.test_response_shape",
