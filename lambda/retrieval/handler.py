@@ -131,7 +131,7 @@ def get_events(event):
                     "price": float(item.get("price") or 0),
                     "state": item.get("state"),
                     "suburb": item.get("suburb"),
-                    "propertyType": item.get("property"),
+                    "propertyType": item.get("propertyType"),
                     "eventDescription": item.get("eventDescription"),
                     "datasetId": item.get("datasetId"),
                     "postcode": item.get("postcode"),
